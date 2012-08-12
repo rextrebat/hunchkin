@@ -9,9 +9,10 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
 import pymongo
-import json
-import urllib2
-import urllib
+
+import crawl_helper
+
+
 
 
 logger = logging.getLogger('get_hotels_for_dest')
@@ -20,21 +21,26 @@ logger = logging.getLogger('get_hotels_for_dest')
 conn = pymongo.Connection("localhost", 27017)
 db = conn.accures
 
-base_url = "http://api.ean.com/ean-services/rs/hotel/v3/list?"
-base_url += "cid=55505"
-base_url += "&apiKey=5rrrsn5skrcjbhcpggvek38u"
-base_url += "&minorRev=16"
-base_url += "&customerUserAgent=None"
-base_url += "&customerIpAddress=None"
-base_url += "&locale=en_US"
-base_url += "&currencyCode=USD"
+throttler = crawl_helper.Throttler(5, 1)
 
+base_url = "http://api.ean.com/ean-services/rs/hotel/v3/list"
 
-def get_json_response(url):
-    logger.debug("Fetching...%s" % (url))
-    response = json.loads(urllib2.urlopen(url).read())
-    # logger.debug("Retrieved:\n %s" % str(response))
-    return response
+base_params = {
+        "cid": "55505",
+        "apiKey": "5rrrsn5skrcjbhcpggvek38u",
+        "minorRev": "16",
+        "customerUserAgent": "None",
+        "customerIpAddress": "None",
+        "locale": "en_US",
+        "currencyCode": "USD"
+        }
+
+requester = crawl_helper.HTTPRequester(
+        base_url=base_url,
+        base_params=base_params,
+        response_format=crawl_helper.ResponseFormat.JSON,
+        throttler=throttler
+        )
 
 
 def get_hotel_desc(hotelid):
@@ -42,11 +48,11 @@ def get_hotel_desc(hotelid):
 
 
 def get_hotels_for_destination(dest):
-    url = base_url + "&" + urllib.urlencode({
+    params = {
             "destinationString": dest,
             "supplierCacheTolerance": "MED_ENHANCED",
-            })
-    response = get_json_response(url)
+            }
+    response = requester.get(params)
     logger.info("Retrieved...%s properties" % (
         str(response["HotelListResponse"]["HotelList"][
             "@activePropertyCount"])))
