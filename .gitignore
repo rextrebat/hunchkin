@@ -1,0 +1,37 @@
+#ignore object files
+*.class
+*.pyc
+
+# ignore nfs temp files
+.nfs*
+
+#ignore swp files
+*.swp
+
+#log files
+*.log*
+
+#static
+accuresweb/static/*
+
+#graveyard
+graveyard/
+
+#editor backup files
+doc/*~
+doc/*autosave
+
+#settings.py to force creating symbolic link in prod
+# config/settings.py
+# config/payment_settings.py
+# lfweb/settings.py
+
+#deploy directory
+deploy/
+
+#backup files from Libre Office
+.~*
+
+#try
+try/
+
