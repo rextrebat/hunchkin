@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<header class="jumbotron subhead">
+    <h2>Genome</h2>
+    <div class="row">
+        <div class="span6 offset1">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Sub-Category</th>
+                        <th>Gene</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for gene in genes %}
+                    <tr>
+                        <td>{{ gene.category }}</td>
+                        <td>{{ gene.sub_category }}</td>
+                        <td>{{ gene.gene_name }}</td>
+                        {% if gene.value is sameas True %}
+                            <td><span class="label label-info">"   "</span></td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</header>
+
+
+
+{% endblock %}
+
