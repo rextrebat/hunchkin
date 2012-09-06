@@ -30,8 +30,8 @@ hotels = {}
 
 
 def split_attr(attr_value):
-    l = nltk.word_tokenize(attr_value.strip())
-    l = [w for w in l if w not in ign_words]
+    l = nltk.word_tokenize(attr_value.strip().lower())
+    l = [w.strip() for w in l if w not in ign_words]
     return set(l)
 
 
