@@ -75,7 +75,9 @@ def hotel_similarities(h_id):
     """
     cursor = conn.cursor()
     for h in hotels.iterkeys():
-        if h == h_id:
+        if h <= h_id:
+# hotel_a is always the smaller id. This check ensures that two hotels are
+# compared only once
             continue
         cursor.execute(
                 """

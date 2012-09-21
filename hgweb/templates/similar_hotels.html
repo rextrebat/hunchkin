@@ -2,16 +2,12 @@
 {% block page_class %}home-page{% endblock %}
 {% block content %}
 <header class="jumbotron subhead">
-    <h2>Hotels:</h2>
+    <h2>Similar Hotels:</h2>
     <div class="row">
         <div class="span6 offset1">
             <ul class="unstyled">
             {% for hotel in hotels %}
-            {% if sim == "false" %}
-                <li><a href="/genome?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
-            {% else %}
-                <li><a href="/similar?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
-            {% endif %}
+            <li><a href="/radar?hotel_a={{ comp_hotel }}&hotel_b={{ hotel.h_id }}">{{ hotel.name }} ({{ hotel.score }})</a>
             {% endfor %}
             </ul>
         </div>

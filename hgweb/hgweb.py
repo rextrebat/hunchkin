@@ -55,6 +55,7 @@ def show_locations():
 def show_hotels():
     hotels = []
     loc = int(request.args.get("loc"))
+    sim = request.args.get("sim", "false")
     db = g.mongo.hotelgenome
     h_query = db.locations.find_one({"loc": loc}, {"query": 1})
     if h_query:
@@ -62,7 +63,7 @@ def show_hotels():
         h_query = 'db.hotels.find(' + h_query + ')'
         res = eval(h_query)
         hotels = [dict(name=h["name"], h_id=h["hotelId"]) for h in res]
-    return render_template('hotels.html', hotels=hotels)
+    return render_template('hotels.html', hotels=hotels, sim=sim)
 
 
 @app.route('/genome')
@@ -96,6 +97,37 @@ def show_genome():
                     }
                 )
     return render_template('genome.html', genes=genes)
+
+
+@app.route('/similar')
+def similar_hotels():
+    comp_hotel = int(request.args.get("h_id"))
+    cursor = g.db.cursor()
+    cursor.execute(
+            """
+            SELECT hotel_b, sim_score
+            FROM top_similar_hotels
+            WHERE hotel_a = %s
+            ORDER BY sim_score DESC
+            """, (comp_hotel)
+            )
+    res = cursor.fetchall()
+    ids = [r[0] for r in res]
+    hotels = [dict(h_id=r[0], score=r[1]) for r in res]
+    db = g.mongo.hotelgenome
+    res2 = db.hotels.find({"hotelId": {"$in": ids}})
+    names = [dict(h_id=r["hotelId"],name=r["name"]) for r in res2]
+    for i, h in enumerate(hotels):
+        for r in names:
+            if h["h_id"] == r["h_id"]:
+                hotels[i]["name"] = r["name"]
+    return render_template('similar_hotels.html',
+            hotels=hotels, comp_hotel=comp_hotel)
+
+
+
+    
+
 
 
 if __name__ == '__main__':

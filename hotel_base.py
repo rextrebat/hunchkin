@@ -8,5 +8,5 @@ __version__ = "0.0pre0"
 
 class Hotel:
 
-    def __init__(self, hotel_main, hotel_amenity, room_amenity):
+    def __init__(self):
         pass

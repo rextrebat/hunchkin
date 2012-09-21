@@ -22,7 +22,7 @@ match_re = re.compile('match\("(.*)"')
 
 count = 0
 
-with open("genome.csv") as f:
+with open("out/genome.csv") as f:
     cursor.execute(
             """
             DELETE FROM genome_rules
