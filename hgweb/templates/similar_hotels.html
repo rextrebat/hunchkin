@@ -2,16 +2,35 @@
 {% block page_class %}home-page{% endblock %}
 {% block content %}
 <header class="jumbotron subhead">
-    <h2>Similar Hotels:</h2>
-    <div class="row">
-        <div class="span6 offset1">
-            <ul class="unstyled">
-            {% for hotel in hotels %}
-            <li><a href="/radar?hotel_a={{ comp_hotel }}&hotel_b={{ hotel.h_id }}">{{ hotel.name }} ({{ hotel.score }})</a>
+    <h2>Similar Hotels for {{ comp_hotel_name}}:</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Sub-Category</th>
+                {% for hotel in hotels %}
+                <th>
+                    <a href="/radar?hotel_a={{ comp_hotel }}&hotel_b={{ hotel.h_id }}">{{ hotel.name }} ({{ hotel.score }})</a>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in axes %}
+            <tr>
+                <td>{{ a.category }}</td>
+                <td>{{ a.sub_category }}</td>
+                {% for hotel in hotels %}
+                {% if sim[hotel.h_id][a.sub_category] > 0 %}
+                    <td>{{ sim[hotel.h_id][a.sub_category] }}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+                {% endfor %}
+            </tr>
             {% endfor %}
-            </ul>
-        </div>
-    </div>
+        </tbody>
+    </table>
 </header>
 
 

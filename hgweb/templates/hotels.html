@@ -7,10 +7,14 @@
         <div class="span6 offset1">
             <ul class="unstyled">
             {% for hotel in hotels %}
-            {% if sim == "false" %}
-                <li><a href="/genome?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+            {% if loccat == "true" %}
+                <li><a href="/loccat?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
             {% else %}
-                <li><a href="/similar?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+                {% if sim == "true" %}
+                    <li><a href="/similar?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+                {% else %}
+                    <li><a href="/genome?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+                {% endif %}
             {% endif %}
             {% endfor %}
             </ul>
