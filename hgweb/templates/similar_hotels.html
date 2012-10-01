@@ -2,7 +2,7 @@
 {% block page_class %}home-page{% endblock %}
 {% block content %}
 <header class="jumbotron subhead">
-    <h2>Similar Hotels for {{ comp_hotel_name}}:</h2>
+<h2>Similar Hotels for <a href="/genome?h_id={{ comp_hotel }}">{{ comp_hotel_name}}:</a></h2>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -10,7 +10,7 @@
                 <th>Sub-Category</th>
                 {% for hotel in hotels %}
                 <th>
-                    <a href="/radar?hotel_a={{ comp_hotel }}&hotel_b={{ hotel.h_id }}">{{ hotel.name }} ({{ hotel.score }})</a>
+                    <a href="/genome?h_id={{ hotel.h_id }}">{{ hotel.name }} ({{ hotel.score }})</a>
                 </th>
                 {% endfor %}
             </tr>

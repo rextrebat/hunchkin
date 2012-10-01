@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<header class="jumbotron subhead">
+<h2>All EAN Data for {{ prop_basic["Name"] }}</h2>
+    <div class="row">
+        <div class="span10 offset1">
+            <h3>Basic Property Data</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Lat / Long </th>
+                        <th>Airport Code</th>
+                        <th>Prop Category</th>
+                        <th>Star Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ prop_basic["Address1"] }}
+                            <br>
+                            {{ prop_basic["Address2"] }}
+                            <br>
+                            {{ prop_basic["City"] }} {{ prop_basic["StateProvince"] }}
+                            <br>
+                            {{ prop_basic["Postal Code"] }}
+                            <br>
+                            {{ prop_basic["Country"] }} </td>
+                        <td>{{ prop_basic["Latitude"] }} / {{ prop_basic["Longitude"] }} </td>
+                        <td>{{ prop_basic["AirportCode"] }} </td>
+                        <td>{{ prop_basic["PropertyCategory"] }} </td>
+                        <td>{{ prop_basic["StarRating"] }} </td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3>Property Description</h3>
+            {{ prop_desc["PropertyDescription"] | safe }}
+            <h3>Area Attractions</h3>
+            {{ area_attractions["AreaAttractions"] | safe }}
+            <h3>Dining Description</h3>
+            {{ dining_desc["DiningDescription"] | safe }}
+            <h3>Policy Description</h3>
+            {{ policy_desc["PolicyDescription"] | safe }}
+            <h3>Spa Description</h3>
+            {{ spa_desc["SpaDescription"] | safe }}
+            <h3>Room Types</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rt in room_types %}
+                    <tr>
+                        <td>{{ rt["RoomTypeName"] }}</td>
+                        <td>{{ rt["RoomTypeDescription"] | safe }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h3>Property Attributes</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>SubType</th>
+                        <th>Attribute</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in prop_attr %}
+                    <tr>
+                        <td>{{ a["Type"] }}</td>
+                        <td>{{ a["SubType"] }}</td>
+                        <td>{{ a["AttributeDesc"] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h3>GDS Property Attributes</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>SubType</th>
+                        <th>GDS Attribute</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in prop_gdsattr %}
+                    <tr>
+                        <td>{{ a["Type"] }}</td>
+                        <td>{{ a["SubType"] }}</td>
+                        <td>{{ a["AttributeDesc"] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</header>
+
+
+
+{% endblock %}
+

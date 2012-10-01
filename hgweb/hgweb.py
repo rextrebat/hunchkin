@@ -57,6 +57,7 @@ def show_hotels():
     loc = int(request.args.get("loc"))
     sim = request.args.get("sim", "false")
     loccat = request.args.get("loccat", "false")
+    ean = request.args.get("ean", "false")
     db = g.mongo.hotelgenome
     h_query = db.locations.find_one({"loc": loc}, {"query": 1})
     if h_query:
@@ -65,7 +66,7 @@ def show_hotels():
         res = eval(h_query)
         hotels = [dict(name=h["name"], h_id=h["hotelId"]) for h in res]
     return render_template('hotels.html',
-            hotels=hotels, sim=sim, loccat=loccat)
+            hotels=hotels, sim=sim, loccat=loccat, ean=ean)
 
 
 @app.route('/genome')
@@ -98,7 +99,13 @@ def show_genome():
                     'value': True if genome[int(bitmask)] == "1" else False
                     }
                 )
-    return render_template('genome.html', genes=genes)
+    cursor.execute(
+            """
+            SELECT name FROM hotel_basic
+            WHERE hotel_id = %s
+            """, h_id)
+    name = cursor.fetchone()[0]
+    return render_template('genome.html', genes=genes, name=name)
 
 
 @app.route('/similar')
@@ -118,6 +125,10 @@ def similar_hotels():
     hotels = [dict(h_id=r[0], name=r[1], score=r[2]) for r in res]
     ids_b = [r[0] for r in res if r[0] > comp_hotel]
     ids_a = [r[0] for r in res if r[0] < comp_hotel]
+    if not ids_b:
+        ids_b = [999999]
+    if not ids_a:
+        ids_a = [999999]
     in_b = ",".join(map(str, ids_b))
     in_a = ",".join(map(str, ids_a))
     cursor.execute(
@@ -189,6 +200,105 @@ def hotel_loc():
         res = eval(h_query)
         hotels = [dict(name=h["name"], h_id=h["hotelId"]) for h in res]
     return render_template('hotels.html', hotels=hotels, sim=sim)
+
+
+@app.route('/ean_data')
+def ean_data():
+    h_id = int(request.args.get("h_id"))
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT * FROM EAN_ActiveProperties
+            WHERE EANHotelID = %s
+            """, h_id)
+    prop_basic = cursor.fetchone()
+    cursor.execute(
+            """
+            SELECT * FROM EAN_AreaAttractions
+            WHERE EANHotelID = %s
+            """, h_id)
+    area_attractions = cursor.fetchone()
+    if area_attractions:
+        area_attractions["AreaAttractions"] = unicode(
+                area_attractions["AreaAttractions"], "utf8")
+    cursor.execute(
+            """
+            SELECT * FROM EAN_DiningDescriptions
+            WHERE EANHotelID = %s
+            """, h_id)
+    dining_desc = cursor.fetchone()
+    if dining_desc:
+        dining_desc["DiningDescription"] = unicode(
+                dining_desc["DiningDescription"], "utf8")
+    cursor.execute(
+            """
+            SELECT * FROM EAN_PolicyDescriptions
+            WHERE EANHotelID = %s
+            """, h_id)
+    policy_desc = cursor.fetchone()
+    if policy_desc:
+        policy_desc["PolicyDescription"] = unicode(
+                policy_desc["PolicyDescription"], "utf8")
+    cursor.execute(
+            """
+            SELECT * FROM EAN_PropertyDescriptions
+            WHERE EANHotelID = %s
+            """, h_id)
+    prop_desc = cursor.fetchone()
+    if prop_desc:
+        prop_desc["PropertyDescription"] = unicode(
+                prop_desc["PropertyDescription"], "utf8")
+    cursor.execute(
+            """
+            SELECT * FROM EAN_RoomTypes
+            WHERE EANHotelID = %s
+            """, h_id)
+    room_types = cursor.fetchall()
+    for r in room_types:
+        r["RoomTypeDescription"] = unicode(
+                r["RoomTypeDescription"], "utf8")
+    cursor.execute(
+            """
+            SELECT * FROM EAN_SpaDescriptions
+            WHERE EANHotelID = %s
+            """, h_id)
+    spa_desc = cursor.fetchone()
+    if spa_desc:
+        spa_desc["SpaDescription"] = unicode(
+                spa_desc["SpaDescription"], "utf8")
+    cursor.execute(
+            """
+            SELECT AttributeDesc, Type, SubType
+            FROM EAN_Attributes a, EAN_PropertyAttributeLink l
+            WHERE a.AttributeID = l.AttributeID
+            AND EANHotelID = %s
+            ORDER BY Type, SubType
+            """, h_id)
+    prop_attr = cursor.fetchall()
+    for p in prop_attr:
+        p["AttributeDesc"] = unicode(p["AttributeDesc"], "utf")
+    cursor.execute(
+            """
+            SELECT AttributeDesc, Type, SubType
+            FROM EAN_GDSAttributes a, EAN_GDSPropertyAttributeLink l
+            WHERE a.AttributeID = l.AttributeID
+            AND EANHotelID = %s
+            ORDER BY Type, SubType
+            """, h_id)
+    prop_gdsattr = cursor.fetchall()
+    for p in prop_gdsattr:
+        p["AttributeDesc"] = unicode(p["AttributeDesc"], "utf")
+    return render_template('ean_data.html',
+            prop_basic=prop_basic,
+            area_attractions=area_attractions,
+            dining_desc=dining_desc,
+            policy_desc=policy_desc,
+            prop_desc=prop_desc,
+            room_types=room_types,
+            spa_desc=spa_desc,
+            prop_attr=prop_attr,
+            prop_gdsattr=prop_gdsattr,
+            )
 
 
 if __name__ == '__main__':

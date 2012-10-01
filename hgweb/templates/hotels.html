@@ -13,7 +13,11 @@
                 {% if sim == "true" %}
                     <li><a href="/similar?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
                 {% else %}
-                    <li><a href="/genome?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+                    {% if ean == "true" %}
+                        <li><a href="/ean_data?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+                    {% else %}
+                        <li><a href="/genome?h_id={{ hotel.h_id }}">{{ hotel.name }}</a>
+                    {% endif %}
                 {% endif %}
             {% endif %}
             {% endfor %}
