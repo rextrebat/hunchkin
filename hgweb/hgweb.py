@@ -186,8 +186,18 @@ def hotel_loc():
             )
     res = cursor.fetchall()
     loccat = [dict(category=r[0], count=r[1]) for r in res]
+
+    db = g.mongo.hotelgenome
+    res = db.hotel_pois_nokia.find_one({"hotelId": h_id})
+    res = res["places"]
+    loccat_nokia = [dict(
+        name=r["title"],
+        category=r["category"]["title"],
+        distance=r["distance"]) \
+                for r in res if r["type"] == 'urn:nlp-types:place']
+
     return render_template('loccat.html', 
-            loccat=loccat)
+            loccat=loccat, loccat_nokia=loccat_nokia)
 
 
     loc = int(request.args.get("loc"))
