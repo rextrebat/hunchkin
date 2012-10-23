@@ -9,6 +9,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
 import pymongo
+import MySQLdb
 import time
 import urlparse
 
@@ -19,9 +20,15 @@ logger = logging.getLogger('ean_hotel_desc')
 
 # -- globals
 conn = pymongo.Connection("localhost", 27017)
+dbconn = MySQLdb.Connection(
+        host="localhost",
+        user="appuser",
+        passwd="rextrebat",
+        db="hotel_genome"
+        )
 db = conn.hotelgenome
 
-throttler1 = crawl_helper.Throttler(10, 1)
+throttler1 = crawl_helper.Throttler(5, 1)
 
 base_url = "http://demo.places.nlp.nokia.com/places/v1/discover/explore"
 
@@ -120,14 +127,27 @@ if __name__ == '__main__':
 # 1. Find all places within 5 k radius for each hotel
 
     logger.info ("[X] Starting places search...")
-    hotels = db.hotels.find()
+    #hotels = db.hotels.find()
     #hotels = db.hotels.find(
-            #{"hotelId": {"$in": [228014,125813,188071,111189,212448]}}
-            #)
+    #        {"hotelId": {"$in": [228014,125813,188071,111189,212448]}}
+    #        )
+    cursor = dbconn.cursor()
+    cursor.execute(
+            """
+            SELECT EANHotelID, Latitude, Longitude
+            FROM EAN_ActiveProperties
+            """
+            )
+    res = cursor.fetchall()
+    hotels = [dict(
+        hotelId=r[0],
+        latitude=float(r[1]),
+        longitude=float(r[2])) for r in res]
     for h in hotels:
         if db.hotel_pois_nokia.find_one({"hotelId": h["hotelId"]}):
             continue
         if all (k in h for k in ("latitude", "longitude")):
+            params = dict(size=200)
             params_no_encode = "in=%s,%s;r=5000" % (
                         str(h["latitude"]), str(h["longitude"]))
             context={
@@ -138,6 +158,7 @@ if __name__ == '__main__':
             task = crawl_helper.FetchTask(
                     config=config_places,
                     context=context,
+                    params=params,
                     params_no_encode=params_no_encode,
                     process_response=handle_places_response,
                     )

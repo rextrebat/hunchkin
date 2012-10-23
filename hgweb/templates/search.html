@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<header class="jumbotron subhead">
+    <div class="row">
+        <div class="span6">
+            <form>
+                <legend>Find the perfect hotel you have in mind</legend>
+                <div class="ui-widget">
+                    <label>Destination</label>
+                    <input class = "input-xxlarge" id="destination" type="text" placeholder="City, Airport Code or area...">
+                </div>
+                <div class="ui-widget">
+                    <label>Name a hotel that you liked in the past</label>
+                    <input class = "input-xxlarge" id="hotel_name" type="text" placeholder="Type the name and city...">
+                </div>
+                <label class="checkbox">
+                    <input id="cb_kids" type="checkbox">Kids in your party?
+                </label>
+                <label class="checkbox">
+                    <input id="cb_disabled" type="checkbox">Disabled / Senior access?
+                </label>
+                <label class="checkbox">
+                    <input id="cb_pets" type="checkbox">Pets?
+                </label>
+                <button type"submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(function() {
+        $( "#destination" ).autocomplete({
+            source: function( request, response ) {
+                $.ajax({
+                    url: "/dest_search",
+                    dataType: "json",
+                    data: {
+                        region_startsWith: request.term
+                    },
+                    success: function( data ) {
+                        response( data )
+                    }
+                });
+            },
+            minLength: 2
+        });
+        $( "#hotel_name" ).autocomplete({
+            source: function( request, response ) {
+                $.ajax({
+                    url: "/prop_search",
+                    dataType: "json",
+                    data: {
+                        prop_startsWith: request.term
+                    },
+                    success: function( data ) {
+                        response( data )
+                    }
+                });
+            },
+            minLength: 2
+        });
+    });
+</script>
+{% endblock %}

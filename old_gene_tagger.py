@@ -21,33 +21,55 @@ conn_mongo = None
 GENOME_LENGTH = 1024
 
 
-def compare(comp, attr, value):
-    if comp == "gt":
-        return attr > value
-    if comp == "ge":
-        return attr >= value
-    if comp == "eq":
-        return attr == value
-    if comp == "le":
-        return attr <= value
-    if comp == "lt":
-        return attr < value
-
-
-def exist(attr_dict, attrs):
-    for a in attrs:
-        if a in attr_dict:
-            return True
-    return False
-
-
-def value(attr_dict, attr):
-    return attr_dict.get(attr, None)
-
+ign_words = set(['-', '(', ')', 's', '/', '.', ',',])
+cmp_operators = ['==', '>', '<', '>=', '<=', '!=']
 
 genome_rules = None
 
 hotels = {}
+
+
+def split_attr(attr_value):
+    l = nltk.word_tokenize(attr_value.strip().lower())
+    l = [w.strip() for w in l if w not in ign_words]
+    return set(l)
+
+
+def compare(h_id, attr, comp):
+    for c in cmp_operators:
+        if c in comp:
+            break
+    t = comp.split(c)
+    h_attr = hotels[h_id][attr]
+    if type(h_attr) == dict:
+        val = h_attr[t[0].strip()]
+        exp = "val " + c + " " + t[1]
+        return eval(exp)
+    elif type(h_attr) == list:
+        b = split_attr(t[0])
+        val = None
+        for a in h_attr:
+            if b.issubset(a):
+                for ai in a:
+                    if ai.isdigit():
+                        val = int(ai)
+                if val:
+                    exp = "val " + c + " " + t[1]
+                    return eval(exp)
+    return False
+
+
+def match(h_id, attr, tag):
+    h_attr = hotels[h_id][attr]
+    if type(h_attr) != list:
+        return False
+    tags = tag.split("OR")
+    for t in tags:
+        b = split_attr(t)
+        for a in h_attr:
+            if b.issubset(a):
+                return True
+    return False
 
 
 def load_genome_rules():
@@ -55,9 +77,9 @@ def load_genome_rules():
     cursor = conn.cursor()
     cursor.execute(
             """
-            SELECT bitmask, gene_code, gene_source, function, parameters 
+            SELECT bitmask, gene_code, gene_rule 
             FROM genome_rules
-            WHERE function != ""
+            WHERE gene_rule != ""
             """
             )
     genome_rules = cursor.fetchall()

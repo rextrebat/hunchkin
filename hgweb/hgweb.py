@@ -9,6 +9,9 @@ import MySQLdb
 import pymongo
 from flask import Flask, request, session, g, redirect, url_for, \
         abort, render_template, flash
+import json
+import urllib2
+import urllib
 
 # configuration
 DEBUG = True
@@ -309,6 +312,37 @@ def ean_data():
             prop_attr=prop_attr,
             prop_gdsattr=prop_gdsattr,
             )
+
+
+@app.route('/search')
+def search():
+    return render_template('search.html')
+
+
+@app.route('/dest_search')
+def dest_search():
+    search_url = "http://elric:8983/solr/collection1/ac"
+    search_params = urllib.urlencode({
+        'q': request.args.get("region_startsWith"),
+        'wt': 'json',
+        'indent': 'true',
+        })
+    response = json.loads(urllib2.urlopen(search_url, search_params).read())
+    region_names = [r["name"] for r in response['response']['docs']]
+    return json.dumps(region_names)
+
+
+@app.route('/prop_search')
+def prop_search():
+    search_url = "http://elric:8983/solr/properties/ac"
+    search_params = urllib.urlencode({
+        'q': request.args.get("prop_startsWith"),
+        'wt': 'json',
+        'indent': 'true',
+        })
+    response = json.loads(urllib2.urlopen(search_url, search_params).read())
+    region_names = [r["name"] for r in response['response']['docs']]
+    return json.dumps(region_names)
 
 
 if __name__ == '__main__':

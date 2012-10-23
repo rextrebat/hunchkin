@@ -33,32 +33,28 @@ with open("out/genome.csv") as f:
             count += 1
             continue
         r = [c.strip() for c in r]
-        category, sub_category, bitmask, gene_name, comment, subjective, \
-          no_reviews, from_expedia, gene_code, key, attr, func, ign1, ign2 = r
-        if func == "compare":
-            gene_rule = 'compare("' + attr + '", "' + key + '")'
-        elif func[:5] == "match":
-            param = match_re.match(func).group(1)
-            if param == "...":
-                gene_rule = 'match("' + attr + '", "' + key + '")'
-            else:
-                gene_rule = 'match("' + attr + '", "' + param + '")'
-        else:
-            gene_rule = ''
-        cursor.execute(
-                """
-                INSERT INTO genome_rules 
-                (
-                category, sub_category, gene_name, comment, subjective,
-                no_reviews, from_expedia, gene_code, gene_rule, bitmask
-                )
-                VALUES
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (category, sub_category, gene_name, comment, subjective,
-                    no_reviews, from_expedia, gene_code,
-                    gene_rule, int(bitmask))
-                )
+        category = r[0]
+        sub_categories = r[1]
+        bitmask = r[2]
+        gene_name = r[3]
+        gene_code = r[10]
+        gene_source = r[11]
+        function = r[12]
+        parameters = r[13]
+        for sub_cat in sub_categories.split(","):
+            cursor.execute(
+                    """
+                    INSERT INTO genome_rules 
+                    (
+                    category, sub_category, gene_name, gene_code,
+                    bitmask, gene_source, function, parameters
+                    )
+                    VALUES
+                    (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (category, sub_cat, gene_name, gene_code,
+                        int(bitmask), gene_source, function, parameters)
+                    )
         count += 1
         print str(count)
     conn.commit()
