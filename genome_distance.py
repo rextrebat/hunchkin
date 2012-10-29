@@ -7,6 +7,7 @@ __version__ = "0.0pre0"
 
 import MySQLdb
 import logging
+from timeit import timeit
 
 # ---GLOBALS
 
@@ -24,18 +25,43 @@ def get_axes():
     cursor = conn.cursor()
     cursor.execute(
             """
-            SELECT sub_category, GROUP_CONCAT(bitmask SEPARATOR ',')
-            FROM genome_rules GROUP BY sub_category
+            SELECT c.category, c.sub_category, 
+            c.measure_type, c.similarity_function, 
+            GROUP_CONCAT(r.bitmask SEPARATOR ',')
+            FROM genome_categories c, genome_rules r
+            WHERE c.sub_category = r.sub_category
+            AND c.category = r.category
+            GROUP by c.category, c.sub_category;
             """
             )
-    res = cursor.fetchall()
-    for r in res:
-        if r[1]:
-            l = eval("[" + r[1] + "]")
-        else:
-            l = []
-        axes[r[0]] = l
+    rows = cursor.fetchall()
+    for r in rows:
+        category, sub_category, measure_type, similarity_function,\
+                bits = r
+        axes[category + "|" + sub_category] = dict(
+                measure_type=measure_type,
+                similarity_function=similarity_function,
+                bits=eval("[" + bits + "]")
+                )
     cursor.close()
+
+
+def modified_simple_match(g1, g2):
+    """
+    Parameters - lists with gene values
+    Modified simple matching - (m00 + m11) / (m00 + m01 + m10 + m11)
+    m00 (absent in both) is down-weighted by 50%
+    """
+    g = zip(g1, g2)
+    m11 = float(len([p for p in g if p[0] == 1 and p[1] == 1]))
+    m00 = float(len([p for p in g if p[0] == 0 and p[1] == 0]))
+    m01 = float(len([p for p in g if p[0] == 0 and p[1] == 1]))
+    m10 = float(len([p for p in g if p[0] == 1 and p[1] == 0]))
+    den = m11 + 0.5*m00 + m01 + m10
+    if den:
+        return (m11 + 0.5*m00) / den
+    else:
+        return 0
 
 
 def jaccard_similarity(g1, g2):
@@ -45,12 +71,27 @@ def jaccard_similarity(g1, g2):
     http://en.wikipedia.org/wiki/Jaccard_index
     """
     g = zip(g1, g2)
-    m11 = float(len([p for p in g if p[0] == "1" and p[1] == "1"]))
-    m01 = float(len([p for p in g if p[0] == "0" and p[1] == "1"]))
-    m10 = float(len([p for p in g if p[0] == "1" and p[1] == "0"]))
-    # m00 = float(len([p for p in g if p[0] == "0" and p[1] == "0"]))
+    m11 = float(len([p for p in g if p[0] == 1 and p[1] == 1]))
+    m01 = float(len([p for p in g if p[0] == 0 and p[1] == 1]))
+    m10 = float(len([p for p in g if p[0] == 1 and p[1] == 0]))
+    # m00 = float(len([p for p in g if p[0] == 0 and p[1] == 0]))
     if m11:
         return m11 / (m01 + m10 + m11)
+    else:
+        return 0
+
+
+def cosine_similarity(g1, g2):
+    """
+    Parameters - lists with gene values
+    """
+    g = zip(g1, g2)
+    dotp = float(sum([p[0] * p[1] for p in g]))
+    modg1 = float(sum(p ** 2 for p in g1)) ** 0.5
+    modg2 = float(sum(p ** 2 for p in g2)) ** 0.5
+    den = modg1 * modg2
+    if den:
+        return dotp / den
     else:
         return 0
 
@@ -61,10 +102,14 @@ def hotel_similarity_vector(h1, h2):
     Output: dict of distance(float) by axis
     """
     similarity = {}
-    for a, l in axes.iteritems():
-        g1 = [hotels[h1][b] for b in l]
-        g2 = [hotels[h2][b] for b in l]
-        similarity[a] = jaccard_similarity(g1, g2)
+    for a, v in axes.iteritems():
+        g1 = [hotels[h1][b] for b in v['bits']]
+        g2 = [hotels[h2][b] for b in v['bits']]
+        if v['measure_type'] != 'Unused':
+            if v['similarity_function'] == 'Cosine':
+                similarity[a] = cosine_similarity(g1, g2)
+            elif v['similarity_function'] == 'Modified_Simple_Match':
+                similarity[a] = modified_simple_match(g1, g2)
     return similarity
 
 
@@ -102,27 +147,24 @@ def hotel_similarities(h_id):
     cursor.close()
 
 
-def load_hotel(h_id=None):
+def load_hotels(selection=None):
     """
-    Parameter: h_id; None implies load all hotels
-    Load hotels into dict
+    Load all hotels in DB otherwise only selection
     """
     cursor = conn.cursor()
-    if h_id:
-        cursor.execute(
-                """
-                SELECT hotel_id, genome FROM hotel_genome
-                WHERE hotel_id = %s
-                """, h_id)
-    else:
-        cursor.execute(
-                """
-                SELECT hotel_id, genome FROM hotel_genome
-                """
-                )
-    for r in cursor.fetchall():
-        hotels[r[0]] = r[1]
-    cursor.close()
+    query = """
+    SELECT hotel_id, genome
+    FROM hotel_genome
+    """
+    if selection:
+        selection = [str(s) for s in selection]
+        query += """
+        WHERE hotel_id in (%s)
+        """ % ",".join(selection)
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    for r in rows:
+        hotels[r[0]] = eval("[" + r[1] + "]")
 
 
 if __name__ == '__main__':
@@ -141,13 +183,15 @@ if __name__ == '__main__':
     get_axes()
 
     logger.info("[2] Loading hotels data")
-    load_hotel()
+    selection = [228014,125813,188071,111189,212448]
+    load_hotels(selection)
 
     logger.info("[3] Computing Distances")
-    for h in hotels.iterkeys():
-        logger.info("Distances for hotel %d", h)
-        hotel_similarities(h)
+    print hotel_similarity_vector(228014, 125813)
 
-    logger.info("[4] Done")
-    conn.commit()
+    logger.info("[4] Timing 1000 invocations of genome distance function")
+    print timeit('sim = hotel_similarity_vector(228014, 125813)',
+            setup='from __main__ import hotel_similarity_vector', number=1000)
+
+    logger.info("[5] Done")
     conn.close()

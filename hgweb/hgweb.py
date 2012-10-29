@@ -327,9 +327,12 @@ def dest_search():
         'wt': 'json',
         'indent': 'true',
         })
-    response = json.loads(urllib2.urlopen(search_url, search_params).read())
-    region_names = [r["name"] for r in response['response']['docs']]
-    return json.dumps(region_names)
+    #response = json.loads(urllib2.urlopen(search_url, search_params).read())
+    #region_names = [r["name"] for r in response['response']['docs']]
+    #return json.dumps(region_names)
+    response = urllib2.urlopen(search_url, search_params).read()
+    response = json.dumps(json.loads(response)['response'])
+    return response
 
 
 @app.route('/prop_search')
@@ -340,9 +343,9 @@ def prop_search():
         'wt': 'json',
         'indent': 'true',
         })
-    response = json.loads(urllib2.urlopen(search_url, search_params).read())
-    region_names = [r["name"] for r in response['response']['docs']]
-    return json.dumps(region_names)
+    response = urllib2.urlopen(search_url, search_params).read()
+    response = json.dumps(json.loads(response)['response'])
+    return response
 
 
 if __name__ == '__main__':

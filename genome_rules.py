@@ -28,20 +28,22 @@ with open("out/genome.csv") as f:
             DELETE FROM genome_rules
             """
             )
-    for r in csv.reader(f):
-        if count == 0:
-            count += 1
-            continue
-        r = [c.strip() for c in r]
-        category = r[0]
-        sub_categories = r[1]
-        bitmask = r[2]
-        gene_name = r[3]
-        gene_code = r[10]
-        gene_source = r[11]
-        function = r[12]
-        parameters = r[13]
+    for r in csv.DictReader(f):
+        #if count == 0:
+            #count += 1
+            #continue
+        for k, v in r.iteritems():
+            r[k] = v.strip()
+        category = r['Category']
+        sub_categories = r['Sub-Category']
+        bitmask = r['Bitmask']
+        gene_name = r['GeneName']
+        gene_code = r['GeneCode']
+        gene_source = r['GeneSource']
+        function = r['Function']
+        parameters = r['Parameters']
         for sub_cat in sub_categories.split(","):
+            sub_cat = sub_cat.strip()
             cursor.execute(
                     """
                     INSERT INTO genome_rules 

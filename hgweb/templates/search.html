@@ -6,24 +6,31 @@
         <div class="span6">
             <form>
                 <legend>Find the perfect hotel you have in mind</legend>
-                <div class="ui-widget">
-                    <label>Destination</label>
+                <div id="dest_control" class="ui-widget control-group">
+                    <label class="control-label" for="destination"><strong>Destination</strong></label>
                     <input class = "input-xxlarge" id="destination" type="text" placeholder="City, Airport Code or area...">
+                    <span id="dest_err" class="help-block"> </span>
                 </div>
-                <div class="ui-widget">
-                    <label>Name a hotel that you liked in the past</label>
+                <div id="hotel_control" class="ui-widget control-group">
+                    <label class="control-label" for="hotel_name"><strong>Name a hotel that you liked in the past</strong></label>
                     <input class = "input-xxlarge" id="hotel_name" type="text" placeholder="Type the name and city...">
+                    <span id="hotel_err" class="help-block"> </span>
                 </div>
-                <label class="checkbox">
-                    <input id="cb_kids" type="checkbox">Kids in your party?
-                </label>
-                <label class="checkbox">
-                    <input id="cb_disabled" type="checkbox">Disabled / Senior access?
-                </label>
-                <label class="checkbox">
-                    <input id="cb_pets" type="checkbox">Pets?
-                </label>
-                <button type"submit" class="btn btn-primary">Submit</button>
+                <div>
+                    <label class="checkbox inline">
+                        <input id="cb_kids" type="checkbox">Kids in your party?
+                    </label>
+                    <label class="checkbox inline">
+                        <input id="cb_disabled" type="checkbox">Disabled / Senior access?
+                    </label>
+                    <label class="checkbox inline">
+                        <input id="cb_pets" type="checkbox">Pets?
+                    </label>
+                </div>
+                <div><p> </p></div>
+                <div>
+                    <button id="submit" type"submit" class="btn btn-primary"><i class="icon-search"></i> Search</button>
+                </div>
             </form>
         </div>
     </div>
@@ -33,6 +40,10 @@
 {% block javascript %}
 <script>
 $(function() {
+        var _dest_ids = [];
+        var _dest_names = [];
+        var _hotel_ids = [];
+        var _hotel_names = [];
         $( "#destination" ).autocomplete({
             source: function( request, response ) {
                 $.ajax({
@@ -42,7 +53,13 @@ $(function() {
                         region_startsWith: request.term
                     },
                     success: function( data ) {
-                        response( data )
+                        _dest_ids = [];
+                        _dest_names = [];
+                        $.each(data.docs, function(doc, doc_data) {
+                            _dest_ids.push(doc_data.id);
+                            _dest_names.push(doc_data.name);
+                        });
+                        response( _dest_names )
                     }
                 });
             },
@@ -57,11 +74,35 @@ $(function() {
                         prop_startsWith: request.term
                     },
                     success: function( data ) {
-                        response( data )
+                        _hotel_ids = [];
+                        _hotel_names = [];
+                        $.each(data.docs, function(doc, doc_data) {
+                            _hotel_ids.push(doc_data.id);
+                            _hotel_names.push(doc_data.name);
+                        });
+                        response( _hotel_names )
                     }
                 });
             },
             minLength: 2
+        });
+        $( "form" ).submit(function() {
+            var d_index = $.inArray($("#destination").val(), _dest_names);
+            if (d_index == -1) {
+                $("#dest_control").addClass("error");
+                $("#dest_err").text("Invalid Region Name - pick from list").show();
+                return false;
+            }
+            $("#dest_control").removeClass("error");
+            $("#dest_err").text(" ").show();
+            var h_index = $.inArray($("#hotel_name").val(), _hotel_names);
+            if (h_index == -1) {
+                $("#hotel_control").addClass("error");
+                $("#hotel_err").text("Invalid Hotel Name - pick from list").show();
+                return false;
+            }
+            $("#hotel_control").removeClass("error");
+            $("#hotel_err").text(" ").show();
         });
     });
 </script>
