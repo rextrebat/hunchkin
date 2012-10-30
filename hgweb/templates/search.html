@@ -4,7 +4,7 @@
 <header class="jumbotron subhead">
     <div class="row">
         <div class="span6">
-            <form>
+            <form id="search_form" method="get" action="/search_results">
                 <legend>Find the perfect hotel you have in mind</legend>
                 <div id="dest_control" class="ui-widget control-group">
                     <label class="control-label" for="destination"><strong>Destination</strong></label>
@@ -28,10 +28,21 @@
                     </label>
                 </div>
                 <div><p> </p></div>
+                <input type="hidden" id="dest_id" name="dest_id">
+                <input type="hidden" id="hotel_id" name="hotel_id">
                 <div>
-                    <button id="submit" type"submit" class="btn btn-primary"><i class="icon-search"></i> Search</button>
+                    <button id="search" type"submit" class="btn btn-primary"><i class="icon-search"></i> Search</button>
                 </div>
             </form>
+            <!--
+            <div>
+                <form name="test_form" method="get" action="/test_form">
+                    <label>test</label>
+                    <input type="text" name="test">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+            -->
         </div>
     </div>
 </header>
@@ -44,6 +55,41 @@ $(function() {
         var _dest_names = [];
         var _hotel_ids = [];
         var _hotel_names = [];
+        if ($("#destination)".value != "") {
+            $.ajax({
+                    url: "/dest_search",
+                    dataType: "json",
+                    data: {
+                        region_startsWith: request.term
+                    },
+                    success: function( data ) {
+                        _dest_ids = [];
+                        _dest_names = [];
+                        $.each(data.docs, function(doc, doc_data) {
+                            _dest_ids.push(doc_data.id);
+                            _dest_names.push(doc_data.name);
+                        });
+                    }
+                });
+            };
+        if ($("#hotel_name)".value != "") {
+            $.ajax({
+                    url: "/prop_search",
+                    dataType: "json",
+                    data: {
+                        prop_startsWith: request.term
+                    },
+                    success: function( data ) {
+                        _hotel_ids = [];
+                        _hotel_names = [];
+                        $.each(data.docs, function(doc, doc_data) {
+                            _hotel_ids.push(doc_data.id);
+                            _hotel_names.push(doc_data.name);
+                        });
+                    }
+                });
+            };
+
         $( "#destination" ).autocomplete({
             source: function( request, response ) {
                 $.ajax({
@@ -86,7 +132,7 @@ $(function() {
             },
             minLength: 2
         });
-        $( "form" ).submit(function() {
+        $( "#search_form" ).submit(function() {
             var d_index = $.inArray($("#destination").val(), _dest_names);
             if (d_index == -1) {
                 $("#dest_control").addClass("error");
@@ -103,6 +149,9 @@ $(function() {
             }
             $("#hotel_control").removeClass("error");
             $("#hotel_err").text(" ").show();
+            $("#dest_id").attr("value", _dest_ids[d_index]);
+            $("#hotel_id").attr("value", _hotel_ids[h_index]);
+            return true;
         });
     });
 </script>

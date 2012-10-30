@@ -14,3 +14,5 @@ LOAD DATA LOCAL INFILE '//home//kdasgupta//workspace//hotelgenome//ean_data//Roo
 LOAD DATA LOCAL INFILE '//home//kdasgupta//workspace//hotelgenome//ean_data//SpaDescriptionList.txt'  INTO TABLE EAN_SpaDescriptions  FIELDS TERMINATED BY '|'  IGNORE 1 LINES;
 LOAD DATA LOCAL INFILE '//home//kdasgupta//workspace//hotelgenome//ean_data//WhatToExpectList.txt'  INTO TABLE EAN_WhatToExpect  FIELDS TERMINATED BY '|'  IGNORE 1 LINES;
 LOAD DATA LOCAL INFILE '//home//kdasgupta//workspace//hotelgenome//ean_data//PropertyDescriptionList.txt'  INTO TABLE EAN_PropertyDescriptions CHARACTER SET binary FIELDS TERMINATED BY '|'  IGNORE 1 LINES;
+LOAD DATA LOCAL INFILE '//home//kdasgupta//workspace//hotelgenome//ean_data//ParentRegionList.txt'  INTO TABLE EAN_Regions CHARACTER SET binary FIELDS TERMINATED BY '|'  IGNORE 1 LINES;
+LOAD DATA LOCAL INFILE '//home//kdasgupta//workspace//hotelgenome//ean_data//RegionEANHotelIDMapping.txt'  INTO TABLE EAN_RegionPropertyMapping CHARACTER SET binary FIELDS TERMINATED BY '|'  IGNORE 1 LINES;

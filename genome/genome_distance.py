@@ -8,6 +8,10 @@ __version__ = "0.0pre0"
 import MySQLdb
 import logging
 from timeit import timeit
+from collections import namedtuple
+from celery import Celery
+import celery
+from celery.signals import worker_init
 
 # ---GLOBALS
 
@@ -15,18 +19,25 @@ logger = logging.getLogger("gene_tagger")
 
 conn = None
 
-hotels = {}
+hotels = None
 
-axes = {}
+celery = Celery('genome_distance', backend="amqp", broker="amqp://")
 
 
-def get_axes():
-    global axes
+SimilarHotel = namedtuple(
+        'SimilarHotel',
+        'hotel_id, similarity, aggregate_similarity'
+        )
+
+
+def get_axes(omit=[]):
+    axes = {}
     cursor = conn.cursor()
     cursor.execute(
             """
-            SELECT c.category, c.sub_category, 
-            c.measure_type, c.similarity_function, 
+            SELECT c.category, c.sub_category,
+            c.measure_type, c.similarity_function, c.category_order,
+            c.normalization_factor,
             GROUP_CONCAT(r.bitmask SEPARATOR ',')
             FROM genome_categories c, genome_rules r
             WHERE c.sub_category = r.sub_category
@@ -37,13 +48,19 @@ def get_axes():
     rows = cursor.fetchall()
     for r in rows:
         category, sub_category, measure_type, similarity_function,\
-                bits = r
-        axes[category + "|" + sub_category] = dict(
-                measure_type=measure_type,
-                similarity_function=similarity_function,
-                bits=eval("[" + bits + "]")
-                )
+                category_order, normalization_factor, bits = r
+        if measure_type != "Unused":
+            key = category + "|" + sub_category
+            if key not in omit:
+                axes[key] = dict(
+                        measure_type=measure_type,
+                        similarity_function=similarity_function,
+                        category_order=category_order,
+                        bits=eval("[" + bits + "]"),
+                        normalization_factor=normalization_factor
+                        )
     cursor.close()
+    return axes
 
 
 def modified_simple_match(g1, g2):
@@ -96,61 +113,105 @@ def cosine_similarity(g1, g2):
         return 0
 
 
-def hotel_similarity_vector(h1, h2):
+def euclidean_similarity(g1, g2, normalization_factor):
+    """
+    Simple euclidean distance
+    """
+    g = zip(g1, g2)
+    dist = float(sum([(p[0] -p[1]) ** 2 for p in g])) ** 0.5
+    norm_dist = dist / normalization_factor
+    return (1.0 - norm_dist)
+
+
+def loc_step(v):
+    """
+    Step function for location data
+    //FIXME: do better statistical analysis
+    """
+    if v < 3:
+        return 1
+    if v < 6:
+        return 2
+    if v < 10:
+        return 3
+    if v < 15:
+        return 4
+    if v < 25:
+        return 5
+    else:
+        return 6
+
+
+def loc_euclidean_similarity(g1, g2, normalization_factor):
+    """
+    Step-function on measure + Euclidean distance
+    //FIXME: Needs to be fixed in raw data
+    only scalar values here
+    """
+    g1 = [loc_step(v) for v in g1]
+    g2 = [loc_step(v) for v in g2]
+    return euclidean_similarity(g1, g2, normalization_factor)
+
+
+@celery.task
+def hotel_similarity_vector(axes, h1, h2):
     """
     Parameters: hotel ids
     Output: dict of distance(float) by axis
     """
+    logger.debug("Similarity: %d %d" % (h1, h2))
     similarity = {}
     for a, v in axes.iteritems():
         g1 = [hotels[h1][b] for b in v['bits']]
         g2 = [hotels[h2][b] for b in v['bits']]
-        if v['measure_type'] != 'Unused':
-            if v['similarity_function'] == 'Cosine':
-                similarity[a] = cosine_similarity(g1, g2)
-            elif v['similarity_function'] == 'Modified_Simple_Match':
-                similarity[a] = modified_simple_match(g1, g2)
+        if v['similarity_function'] == 'Cosine':
+            similarity[a] = round(cosine_similarity(g1, g2),2)
+        elif v['similarity_function'] == 'Modified_Simple_Match':
+            similarity[a] = round(modified_simple_match(g1, g2),2)
+        elif v['similarity_function'] == 'Euclidean':
+            similarity[a] = round(euclidean_similarity(
+                g1, g2, v['normalization_factor']),2)
+        elif v['similarity_function'] == 'Loc_Euclidean':
+            similarity[a] = round(loc_euclidean_similarity(
+                g1, g2, v['normalization_factor']),2)
     return similarity
 
 
-def hotel_similarities(h_id):
+def aggregate_similarity(similarity):
     """
-    Parameters: hotel id
-    Saves similarity into db for all others in the hotels dict
+    Return the aggregate similarity
     """
-    cursor = conn.cursor()
-    for h in hotels.iterkeys():
-        if h <= h_id:
-# hotel_a is always the smaller id. This check ensures that two hotels are
-# compared only once
-            continue
-        cursor.execute(
-                """
-                DELETE FROM hotel_similarity
-                WHERE hotel_a = %s AND hotel_b = %s
-                """, (h_id, h))
-        sim = hotel_similarity_vector(h_id, h)
-        sim_recs = []
-        logger.debug(sim)
-        for a, v in sim.iteritems():
-            sim_recs.append((
-                        h_id, h, a, round(v, 2)))
-        if sim_recs:
-            cursor.executemany(
-                    """
-                    INSERT INTO hotel_similarity
-                    (hotel_a, hotel_b, sim_axis, sim_value)
-                    VALUES
-                    (%s, %s, %s, %s)
-                    """, sim_recs)
-    conn.commit()
-    cursor.close()
+    return sum([v for v in similarity.itervalues()])
+
+
+@celery.task
+def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
+    """
+    Find the top n similar hotels
+    base_h_id: base hotel to compare to
+    comp_hotels: list of hotels to compare with
+    n_hotels: number of hotels to return
+    return: list with (hotel_id, similarity, aggregate_similarity) tuples 
+    in sorted order
+    """
+    axes = get_axes(axes_omissions)
+    similar_hotels = []
+    for c in comp_hotels:
+        similarity = hotel_similarity_vector(axes, base_h_id, c)
+        aggregate_similarity = sum([v for v in similarity.itervalues()])
+        similar_hotels.append(SimilarHotel(
+                c, similarity, aggregate_similarity))
+    similar_hotels.sort(key=lambda sim: sim[2], reverse=True)
+    return similar_hotels[:n_hotels]
 
 
 def load_hotels(selection=None):
     """
     Load all hotels in DB otherwise only selection
     """
+    global hotels
+    hotels = {}
+    logging.debug("[X] Starting loading hotels...")
     cursor = conn.cursor()
     query = """
     SELECT hotel_id, genome
@@ -165,11 +226,28 @@ def load_hotels(selection=None):
     rows = cursor.fetchall()
     for r in rows:
         hotels[r[0]] = eval("[" + r[1] + "]")
+    logging.debug("[X] Done loading hotels...")
+
+
+@worker_init.connect
+def initialize_genome_distance(sender=None, conf=None, **kwargs):
+
+    global conn
+    logger.info("[1] Connecting to DB")
+    conn = MySQLdb.Connection(
+        host="localhost",
+        user="appuser",
+        passwd="rextrebat",
+        db="hotel_genome"
+    )
+
+    logger.info("[2] Loading hotels data")
+    load_hotels()
 
 
 if __name__ == '__main__':
 
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
     conn = MySQLdb.Connection(
         host="localhost",
@@ -180,18 +258,20 @@ if __name__ == '__main__':
 
 
     logger.info("[1] Loading Similarity Axes")
-    get_axes()
+    axes = get_axes()
 
     logger.info("[2] Loading hotels data")
     selection = [228014,125813,188071,111189,212448]
     load_hotels(selection)
 
     logger.info("[3] Computing Distances")
-    print hotel_similarity_vector(228014, 125813)
+    print hotel_similarity_vector(axes, 228014, 125813)
 
     logger.info("[4] Timing 1000 invocations of genome distance function")
-    print timeit('sim = hotel_similarity_vector(228014, 125813)',
-            setup='from __main__ import hotel_similarity_vector', number=1000)
+    #print timeit('sim = hotel_similarity_vector(228014, 125813)',
+    #        setup='from __main__ import hotel_similarity_vector', number=1000)
 
     logger.info("[5] Done")
     conn.close()
+
+

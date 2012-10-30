@@ -34,18 +34,22 @@ with open("../out/genome_categories.csv") as f:
         measure_type = r['Type']
         similarity_function = r['Similarity_function']
         category_order = r['Order']
+        normalization_factor = r['Normalization_Factor']
+        if not normalization_factor:
+            normalization_factor = '0'
         cursor.execute(
                 """
                 INSERT INTO genome_categories 
                 (
                 category, sub_category, measure_type,
-                similarity_function, category_order
+                similarity_function, category_order, normalization_factor
                 )
                 VALUES
-                (%s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s)
                 """,
                 (category, sub_category, measure_type,
-                    similarity_function, int(category_order))
+                    similarity_function, int(category_order),
+                    int(normalization_factor))
                 )
         count += 1
         print str(count)

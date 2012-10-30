@@ -12,6 +12,7 @@ from flask import Flask, request, session, g, redirect, url_for, \
 import json
 import urllib2
 import urllib
+import genome_distance
 
 # configuration
 DEBUG = True
@@ -41,6 +42,7 @@ def connect_mongo():
 def before_request():
     g.db = connect_db()
     g.mongo = connect_mongo()
+    genome_distance.conn = g.db
 
 
 @app.teardown_request
@@ -346,6 +348,79 @@ def prop_search():
     response = urllib2.urlopen(search_url, search_params).read()
     response = json.dumps(json.loads(response)['response'])
     return response
+
+
+@app.route('/search_results')
+def handle_search():
+    region_id = int(request.args.get("dest_id"))
+    base_hotel_id = int(request.args.get("hotel_id"))
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT rp.EANHotelID 
+            FROM EAN_RegionPropertyMapping rp, EAN_ActiveProperties p
+            WHERE p.EANHotelID = rp.EANHotelID
+            AND rp.RegionID = "%s"
+            """, region_id
+            )
+    rows = cursor.fetchall()
+    comp_hotels = [int(r['EANHotelID']) for r in rows]
+    errors = {}
+    similar_hotels = None
+    hotel_details = None
+    axes = None
+    if not comp_hotels:
+        errors["region_id"] = "No hotels found for that destination"
+    elif len(comp_hotels) > 500:
+        errors["region_id"] = "Too many hotels. Narrow down your destination"
+    else:
+        result = genome_distance.top_n_similar.delay(
+                base_hotel_id,
+                comp_hotels,
+                10
+                )
+        similar_hotels = result.get(timeout=5)
+        similar_hotel_ids = [s.hotel_id for s in similar_hotels]
+        cursor.execute(
+                """
+                SELECT EANHotelID, Name
+                FROM EAN_ActiveProperties
+                WHERE EANHotelID in (%s)
+                """ % ",".join([str(i) for i in similar_hotel_ids])
+                )
+        rows = cursor.fetchall()
+        hotel_details = {}
+        for r in rows:
+            hotel_details[r['EANHotelID']] = {'name': r['Name']}
+        axes = []
+        for k, v in genome_distance.get_axes().iteritems():
+            category, sub_category = k.split("|")
+            category_order = v['category_order']
+            axes.append((category, sub_category, category_order))
+            axes.sort(key=lambda a: a[2])
+        cursor.execute(
+                """
+                SELECT Name
+                FROM EAN_ActiveProperties
+                WHERE EANHotelID = %s
+                """, base_hotel_id
+                )
+        base_hotel_name = cursor.fetchone()['Name']
+    return render_template('search_results.html',
+            axes=axes,
+            similar_hotels=similar_hotels,
+            hotel_details=hotel_details,
+            base_hotel_name=base_hotel_name,
+            errors=errors
+            )
+
+
+
+@app.route('/test_form')
+def test_form():
+    print request.form
+    test_val = request.args.get("test")
+    return "I got %s" % test_val
 
 
 if __name__ == '__main__':

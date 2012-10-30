@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<header class="jumbotron subhead">
+{% if errors.region_id is defined %}
+    <p class="text-error"><h2>{{ errors.region_id }}</h2></p>
+{% else %}
+<h2>Since you liked {{ base_hotel_name}}, our hunch is that you will like these</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Sub-Category</th>
+                {% for hotel in similar_hotels %}
+                <th>
+                    <p> {{ hotel_details[hotel.hotel_id].name }} </p>
+                    <p> <em>[{{ hotel.aggregate_similarity }}] </em> </p>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in axes %}
+            <tr>
+                <td>{{ a[0] }}</td>
+                <td>{{ a[1] }}</td>
+                {% for hotel in similar_hotels %}
+                {% if hotel.similarity[a[:2]|join("|")] > 0 %}
+                    <td>{{ hotel.similarity[a[:2]|join("|")] }}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+</header>
+
+
+
+{% endblock %}
+
