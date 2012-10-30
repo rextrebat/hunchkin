@@ -55,41 +55,6 @@ $(function() {
         var _dest_names = [];
         var _hotel_ids = [];
         var _hotel_names = [];
-        if ($("#destination)".value != "") {
-            $.ajax({
-                    url: "/dest_search",
-                    dataType: "json",
-                    data: {
-                        region_startsWith: request.term
-                    },
-                    success: function( data ) {
-                        _dest_ids = [];
-                        _dest_names = [];
-                        $.each(data.docs, function(doc, doc_data) {
-                            _dest_ids.push(doc_data.id);
-                            _dest_names.push(doc_data.name);
-                        });
-                    }
-                });
-            };
-        if ($("#hotel_name)".value != "") {
-            $.ajax({
-                    url: "/prop_search",
-                    dataType: "json",
-                    data: {
-                        prop_startsWith: request.term
-                    },
-                    success: function( data ) {
-                        _hotel_ids = [];
-                        _hotel_names = [];
-                        $.each(data.docs, function(doc, doc_data) {
-                            _hotel_ids.push(doc_data.id);
-                            _hotel_names.push(doc_data.name);
-                        });
-                    }
-                });
-            };
-
         $( "#destination" ).autocomplete({
             source: function( request, response ) {
                 $.ajax({
@@ -133,6 +98,40 @@ $(function() {
             minLength: 2
         });
         $( "#search_form" ).submit(function() {
+            if (_dest_names.length == 0 && $("#destination").val() != ""){
+                $.ajax({
+                        url: "/dest_search",
+                        dataType: "json",
+                        data: {
+                            region_startsWith: $("#destination").val()
+                        },
+                        success: function( data ) {
+                            _dest_ids = [];
+                            _dest_names = [];
+                            $.each(data.docs, function(doc, doc_data) {
+                                _dest_ids.push(doc_data.id);
+                                _dest_names.push(doc_data.name);
+                            });
+                        }
+                    });
+            };
+            if (_hotel_names.length == 0 && $("#hotel_name").val() != ""){
+                $.ajax({
+                        url: "/prop_search",
+                        dataType: "json",
+                        data: {
+                            prop_startsWith: $("#hotel_name").val()
+                        },
+                        success: function( data ) {
+                            _hotel_ids = [];
+                            _hotel_names = [];
+                            $.each(data.docs, function(doc, doc_data) {
+                                _hotel_ids.push(doc_data.id);
+                                _hotel_names.push(doc_data.name);
+                            });
+                        }
+                    });
+            }
             var d_index = $.inArray($("#destination").val(), _dest_names);
             if (d_index == -1) {
                 $("#dest_control").addClass("error");
