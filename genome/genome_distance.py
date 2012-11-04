@@ -11,7 +11,7 @@ from timeit import timeit
 from collections import namedtuple
 from celery import Celery
 import celery
-from celery.signals import worker_init
+from celery.signals import worker_init, task_prerun
 
 # ---GLOBALS
 
@@ -275,6 +275,30 @@ def initialize_genome_distance(sender=None, conf=None, **kwargs):
 
     logger.info("[2] Loading hotels data")
     load_hotels()
+
+
+@task_prerun.connect
+def check_connection(**kwargs):
+
+    global conn
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+                """
+                SELECT category
+                FROM hotel_genome
+                LIMIT 1;
+                """
+                )
+    except:
+        conn.close()
+        conn = MySQLdb.Connection(
+            host="localhost",
+            user="appuser",
+            passwd="rextrebat",
+            db="hotel_genome"
+        )
+        logger.info("[X] Reconnected to DB")
 
 
 if __name__ == '__main__':
