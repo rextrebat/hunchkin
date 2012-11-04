@@ -1,0 +1,18 @@
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Gene Name</th>
+            <th>Base Hotel</th>
+            <th>Comp Hotel</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for g in gene_values %}
+        <tr>
+            <td>{{ g[0] }}</td>
+            <td>{{ g[1] }}</td>
+            <td>{{ g[2] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -26,6 +26,13 @@ DB = "hotel_genome"
 app = Flask(__name__)
 app.config.from_object(__name__)
 
+
+@app.template_filter('urlquote')
+def urlquote(s):
+   return urllib.quote(s)
+app.jinja_env.globals['urlquote'] = urlquote
+
+
 def connect_db():
     return MySQLdb.Connection(
             host=app.config['HOST'],
@@ -411,9 +418,22 @@ def handle_search():
             similar_hotels=similar_hotels,
             hotel_details=hotel_details,
             base_hotel_name=base_hotel_name,
+            base_hotel_id=base_hotel_id,
             errors=errors
             )
 
+
+@app.route('/get_gene_values')
+def get_gene_values():
+    base_hotel_id = int(request.args.get("base_hotel_id"))
+    comp_hotel_id = int(request.args.get("comp_hotel_id"))
+    category = request.args.get("category").strip()
+    sub_category = request.args.get("sub_category").strip()
+    result = genome_distance.get_gene_values.delay(
+            base_hotel_id, comp_hotel_id, category, sub_category)
+    gene_values = result.get(timeout=5)
+    return render_template('gene_values.html', 
+            gene_values=gene_values)
 
 
 @app.route('/test_form')

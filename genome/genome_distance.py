@@ -205,6 +205,37 @@ def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
     return similar_hotels[:n_hotels]
 
 
+@celery.task
+def get_gene_values(base_h_id, comp_h_id, category, sub_category):
+    """
+    Get actual gene values for a sub_category
+    Return (gene_name, base_value, comp_value)
+    """
+    axes = get_axes()
+    bits = axes[category + "|" + sub_category]["bits"]
+    bits = [str(bit) for bit in bits]
+    cursor = conn.cursor()
+    print bits
+    cursor.execute(
+            """
+            SELECT DISTINCT gene_name, bitmask
+            FROM genome_rules
+            WHERE bitmask IN (%s)
+            """ % ','.join(bits)
+            )
+    rows = cursor.fetchall()
+    gene_values = []
+    for r in rows:
+        name, bit = r
+        gene_values.append((
+            name,
+            hotels[base_h_id][bit],
+            hotels[comp_h_id][bit]
+            ))
+    cursor.close()
+    return gene_values
+
+
 def load_hotels(selection=None):
     """
     Load all hotels in DB otherwise only selection
@@ -227,6 +258,7 @@ def load_hotels(selection=None):
     for r in rows:
         hotels[r[0]] = eval("[" + r[1] + "]")
     logging.debug("[X] Done loading hotels...")
+    cursor.close()
 
 
 @worker_init.connect
@@ -267,9 +299,12 @@ if __name__ == '__main__':
     logger.info("[3] Computing Distances")
     print hotel_similarity_vector(axes, 228014, 125813)
 
-    logger.info("[4] Timing 1000 invocations of genome distance function")
+    #logger.info("[4] Timing 1000 invocations of genome distance function")
     #print timeit('sim = hotel_similarity_vector(228014, 125813)',
     #        setup='from __main__ import hotel_similarity_vector', number=1000)
+
+    logger.info("[4] Getting gene values")
+    print get_gene_values(228014, 125813, "HOTEL AMENITIES", "Pool")
 
     logger.info("[5] Done")
     conn.close()
