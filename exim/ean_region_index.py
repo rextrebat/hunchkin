@@ -54,21 +54,33 @@ if __name__ == '__main__':
         w.writerow(("id", "name", "type"))
         for r_id, r in regions.iteritems():
             t = r
-            r_name = ""
+            r_name = t["RegionNameLong"]
             r_type = region_type[t["RegionType"]]
-            if t["RegionType"] == "Continent":
+            if t["RegionType"] in [
+                    "Continent",
+                    "Country",
+                    "Point of Interest",
+                    "Point of Interest Shadow"
+                    ]:
+                continue
+            elif t["SubClass"] in [
+                    "neighbor",
+                    ]:
                 continue
             elif t["ParentRegionID"] == 0:
                 continue
-            while True:
-                #r_name += " " + t["RegionNameLong"]
-                r_name += " " + t["RegionName"]
-                if t["RegionType"] == "Country":
-                    break
-                else:
-                    next_id = t["ParentRegionID"]
-                    if next_id not in regions:
-                        break
-                    else:
-                        t = regions[next_id]
+            elif t["RegionType"] == "Neighborhood" and t[
+                    "SubClass"] != "airport":
+                continue
+            #while True:
+            #    #r_name += " " + t["RegionNameLong"]
+            #    r_name += " " + t["RegionName"]
+            #    if t["RegionType"] == "Country":
+            #        break
+            #    else:
+            #        next_id = t["ParentRegionID"]
+            #        if next_id not in regions:
+            #            break
+            #        else:
+            #            t = regions[next_id]
             w.writerow((r_id, r_name.strip(), r_type))
