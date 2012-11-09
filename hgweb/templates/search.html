@@ -50,11 +50,13 @@
 
 {% block javascript %}
 <script>
+var _dest_ids = [];
+var _dest_names = [];
+var _hotel_ids = [];
+var _hotel_names = [];
+var d_index = -1;
+var h_index = -1;
 $(function() {
-        var _dest_ids = [];
-        var _dest_names = [];
-        var _hotel_ids = [];
-        var _hotel_names = [];
         $( "#destination" ).autocomplete({
             source: function( request, response ) {
                 $.ajax({
@@ -102,6 +104,7 @@ $(function() {
                 $.ajax({
                         url: "/dest_search",
                         dataType: "json",
+                        async: false,
                         data: {
                             region_startsWith: $("#destination").val()
                         },
@@ -119,6 +122,7 @@ $(function() {
                 $.ajax({
                         url: "/prop_search",
                         dataType: "json",
+                        async: false,
                         data: {
                             prop_startsWith: $("#hotel_name").val()
                         },
@@ -132,7 +136,7 @@ $(function() {
                         }
                     });
             }
-            var d_index = $.inArray($("#destination").val(), _dest_names);
+            d_index = $.inArray($("#destination").val(), _dest_names);
             if (d_index == -1) {
                 $("#dest_control").addClass("error");
                 $("#dest_err").text("Invalid Region Name - pick from list").show();
@@ -140,7 +144,7 @@ $(function() {
             }
             $("#dest_control").removeClass("error");
             $("#dest_err").text(" ").show();
-            var h_index = $.inArray($("#hotel_name").val(), _hotel_names);
+            h_index = $.inArray($("#hotel_name").val(), _hotel_names);
             if (h_index == -1) {
                 $("#hotel_control").addClass("error");
                 $("#hotel_err").text("Invalid Hotel Name - pick from list").show();
