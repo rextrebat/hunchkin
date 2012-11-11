@@ -7,25 +7,15 @@ __version__ = "0.0pre0"
 
 import MySQLdb
 import pymongo
-from flask import Flask, request, session, g, redirect, url_for, \
-        abort, render_template, flash
+from flask import request, g, render_template
 import json
 import urllib2
 import urllib
-import genome_distance
-import ean_tasks
+import genome.genome_distance as genome_distance
+import avail.ean_tasks as ean_tasks
+from hgweb import app
 
 # configuration
-DEBUG = True
-SECRET_KEY = "development key"
-HOST="localhost"
-USERNAME = "appuser"
-PASSWORD = "rextrebat"
-DB = "hotel_genome"
-
-
-app = Flask(__name__)
-app.config.from_object(__name__)
 
 
 @app.template_filter('urlquote')
