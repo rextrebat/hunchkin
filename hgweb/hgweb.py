@@ -13,6 +13,7 @@ import json
 import urllib2
 import urllib
 import genome_distance
+import ean_tasks
 
 # configuration
 DEBUG = True
@@ -361,6 +362,8 @@ def prop_search():
 def handle_search():
     region_id = int(request.args.get("dest_id"))
     base_hotel_id = int(request.args.get("hotel_id"))
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
     cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
@@ -375,6 +378,7 @@ def handle_search():
     errors = {}
     similar_hotels = None
     hotel_details = None
+    hotel_avail = None
     axes = None
     if not comp_hotels:
         errors["region_id"] = "No hotels found for that destination"
@@ -388,17 +392,28 @@ def handle_search():
                 )
         similar_hotels = result.get(timeout=5)
         similar_hotel_ids = [s.hotel_id for s in similar_hotels]
+        result2 = ean_tasks.get_avail_hotels.delay(
+                date_from,
+                date_to,
+                similar_hotel_ids
+                )
         cursor.execute(
                 """
-                SELECT EANHotelID, Name
-                FROM EAN_ActiveProperties
-                WHERE EANHotelID in (%s)
+                SELECT p.EANHotelID, p.Name, i.ThumbnailURL
+                FROM EAN_ActiveProperties p, EAN_HotelImages i
+                WHERE p.EANHotelID = i.EANHotelID
+                AND i.DefaultImage = 1
+                AND p.EANHotelID in (%s)
                 """ % ",".join([str(i) for i in similar_hotel_ids])
                 )
         rows = cursor.fetchall()
         hotel_details = {}
         for r in rows:
-            hotel_details[r['EANHotelID']] = {'name': r['Name']}
+            hotel_details[r['EANHotelID']] = {
+                    'name': r['Name'],
+                    'thumbnail_url': r['ThumbnailURL'],
+                    }
+        hotel_avail = result2.get(timeout=5)
         axes = []
         for k, v in genome_distance.get_axes().iteritems():
             category, sub_category = k.split("|")
@@ -417,6 +432,7 @@ def handle_search():
             axes=axes,
             similar_hotels=similar_hotels,
             hotel_details=hotel_details,
+            hotel_avail=hotel_avail,
             base_hotel_name=base_hotel_name,
             base_hotel_id=base_hotel_id,
             errors=errors

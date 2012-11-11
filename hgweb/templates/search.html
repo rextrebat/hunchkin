@@ -11,6 +11,14 @@
                     <input class = "input-xxlarge" id="destination" type="text" placeholder="City, Airport Code or area...">
                     <span id="dest_err" class="help-block"> </span>
                 </div>
+                <label><strong>Dates</strong></label>
+                <div id="travel_dates" class="inline">
+                    <p>
+                    <input type="text" id="date_from" name="date_from" >
+                     To <input type="text" id="date_to" name="date_to">
+                    </p>
+                </div>
+
                 <div id="hotel_control" class="ui-widget control-group">
                     <label class="control-label" for="hotel_name"><strong>Name a hotel that you liked in the past</strong></label>
                     <input class = "input-xxlarge" id="hotel_name" type="text" placeholder="Type the name and city...">
@@ -57,6 +65,21 @@ var _hotel_names = [];
 var d_index = -1;
 var h_index = -1;
 $(function() {
+        $( "#date_from, #date_to").datepicker({
+            defaultDate: "+1w",
+            minDate: new Date(),
+            changeMonth: true,
+            numberOfMonths: 2,
+            onSelect: function( selectedDate ){
+                if (this.id == 'date_from'){
+                    var dateMin = $("#date_from").datepicker("getDate");
+                    var rMin = new Date(dateMin.getFullYear(), dateMin.getMonth(), dateMin.getDate() + 1);
+                    var rMax = new Date(dateMin.getFullYear(), dateMin.getMonth(), dateMin.getDate() + 60);
+                    $("#date_to").datepicker("option", "minDate", rMin);
+                    $("#date_to").datepicker("option", "maxDate", rMax);
+                }
+            }
+        });
         $( "#destination" ).autocomplete({
             source: function( request, response ) {
                 $.ajax({

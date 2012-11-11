@@ -15,7 +15,13 @@
                 <th>Sub-Category</th>
                 {% for hotel in similar_hotels %}
                 <th>
-                    <p> {{ hotel_details[hotel.hotel_id].name }} </p>
+                    <p> <strong>{{ hotel_details[hotel.hotel_id].name }}</strong> </p>
+                    <p><img class="img-rounded" src="{{ hotel_details[hotel.hotel_id].thumbnail_url }}"></p>
+                    {% if hotel_avail[hotel.hotel_id].available == True %}
+                    <p><span class="label label-info">${{hotel_avail[hotel.hotel_id].low_rate}} and up</span></p>
+                    {% else %}
+                    <p><span class="label label-error">Unavailable</span></p>
+                    {% endif %}
                     <p> <em>[{{ hotel.aggregate_similarity }}] </em> </p>
                 </th>
                 {% endfor %}
