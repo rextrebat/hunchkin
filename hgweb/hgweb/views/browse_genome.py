@@ -6,55 +6,16 @@ __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
 import MySQLdb
-import pymongo
-from flask import request, g, render_template
-import json
-import urllib2
-import urllib
-import genome.genome_distance as genome_distance
-import avail.ean_tasks as ean_tasks
-from hgweb import app
+from flask import request, g, render_template, Blueprint
 
-# configuration
+browse_genome = Blueprint('browse_genome', __name__)
 
-
-@app.template_filter('urlquote')
-def urlquote(s):
-   return urllib.quote(s)
-app.jinja_env.globals['urlquote'] = urlquote
-
-
-def connect_db():
-    return MySQLdb.Connection(
-            host=app.config['HOST'],
-            db=app.config['DB'],
-            user=app.config['USERNAME'],
-            passwd=app.config['PASSWORD']
-            )
-
-def connect_mongo():
-    return pymongo.Connection(host=app.config['HOST'])
-
-
-@app.before_request
-def before_request():
-    g.db = connect_db()
-    g.mongo = connect_mongo()
-    genome_distance.conn = g.db
-
-
-@app.teardown_request
-def teardown_request(exception):
-    if hasattr(g, 'db'):
-        g.db.close()
-
-
-@app.route('/')
+@browse_genome.route('/browse')
 def show_locations():
     return render_template('home.html')
 
 
-@app.route('/hotels')
+@browse_genome.route('/hotels')
 def show_hotels():
     hotels = []
     loc = int(request.args.get("loc"))
@@ -72,7 +33,7 @@ def show_hotels():
             hotels=hotels, sim=sim, loccat=loccat, ean=ean)
 
 
-@app.route('/genome')
+@browse_genome.route('/genome')
 def show_genome():
     genes = []
     cursor = g.db.cursor()
@@ -111,7 +72,7 @@ def show_genome():
     return render_template('genome.html', genes=genes, name=name)
 
 
-@app.route('/similar')
+@browse_genome.route('/similar')
 def similar_hotels():
     comp_hotel = int(request.args.get("h_id"))
     cursor = g.db.cursor()
@@ -176,7 +137,7 @@ def similar_hotels():
             )
 
 
-@app.route('/loccat')
+@browse_genome.route('/loccat')
 def hotel_loc():
     h_id = int(request.args.get("h_id"))
     cursor = g.db.cursor()
@@ -215,7 +176,7 @@ def hotel_loc():
     return render_template('hotels.html', hotels=hotels, sim=sim)
 
 
-@app.route('/ean_data')
+@browse_genome.route('/ean_data')
 def ean_data():
     h_id = int(request.args.get("h_id"))
     cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
@@ -312,142 +273,3 @@ def ean_data():
             prop_attr=prop_attr,
             prop_gdsattr=prop_gdsattr,
             )
-
-
-@app.route('/search')
-def search():
-    return render_template('search.html')
-
-
-@app.route('/dest_search')
-def dest_search():
-    search_url = "http://elric:8983/solr/collection1/ac"
-    search_params = urllib.urlencode({
-        'q': request.args.get("region_startsWith"),
-        'wt': 'json',
-        'indent': 'true',
-        })
-    #response = json.loads(urllib2.urlopen(search_url, search_params).read())
-    #region_names = [r["name"] for r in response['response']['docs']]
-    #return json.dumps(region_names)
-    response = urllib2.urlopen(search_url, search_params).read()
-    response = json.dumps(json.loads(response)['response'])
-    return response
-
-
-@app.route('/prop_search')
-def prop_search():
-    search_url = "http://elric:8983/solr/properties/ac"
-    search_params = urllib.urlencode({
-        'q': request.args.get("prop_startsWith"),
-        'wt': 'json',
-        'indent': 'true',
-        })
-    response = urllib2.urlopen(search_url, search_params).read()
-    response = json.dumps(json.loads(response)['response'])
-    return response
-
-
-@app.route('/search_results')
-def handle_search():
-    region_id = int(request.args.get("dest_id"))
-    base_hotel_id = int(request.args.get("hotel_id"))
-    date_from = request.args.get("date_from")
-    date_to = request.args.get("date_to")
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
-    cursor.execute(
-            """
-            SELECT rp.EANHotelID 
-            FROM EAN_RegionPropertyMapping rp, EAN_ActiveProperties p
-            WHERE p.EANHotelID = rp.EANHotelID
-            AND rp.RegionID = "%s"
-            """, region_id
-            )
-    rows = cursor.fetchall()
-    comp_hotels = [int(r['EANHotelID']) for r in rows]
-    errors = {}
-    similar_hotels = None
-    hotel_details = None
-    hotel_avail = None
-    axes = None
-    if not comp_hotels:
-        errors["region_id"] = "No hotels found for that destination"
-    elif len(comp_hotels) > 500:
-        errors["region_id"] = "Too many hotels. Narrow down your destination"
-    else:
-        result = genome_distance.top_n_similar.delay(
-                base_hotel_id,
-                comp_hotels,
-                10
-                )
-        similar_hotels = result.get(timeout=5)
-        similar_hotel_ids = [s.hotel_id for s in similar_hotels]
-        result2 = ean_tasks.get_avail_hotels.delay(
-                date_from,
-                date_to,
-                similar_hotel_ids
-                )
-        cursor.execute(
-                """
-                SELECT p.EANHotelID, p.Name, i.ThumbnailURL
-                FROM EAN_ActiveProperties p, EAN_HotelImages i
-                WHERE p.EANHotelID = i.EANHotelID
-                AND i.DefaultImage = 1
-                AND p.EANHotelID in (%s)
-                """ % ",".join([str(i) for i in similar_hotel_ids])
-                )
-        rows = cursor.fetchall()
-        hotel_details = {}
-        for r in rows:
-            hotel_details[r['EANHotelID']] = {
-                    'name': r['Name'],
-                    'thumbnail_url': r['ThumbnailURL'],
-                    }
-        hotel_avail = result2.get(timeout=5)
-        axes = []
-        for k, v in genome_distance.get_axes().iteritems():
-            category, sub_category = k.split("|")
-            category_order = v['category_order']
-            axes.append((category, sub_category, category_order))
-            axes.sort(key=lambda a: a[2])
-        cursor.execute(
-                """
-                SELECT Name
-                FROM EAN_ActiveProperties
-                WHERE EANHotelID = %s
-                """, base_hotel_id
-                )
-        base_hotel_name = cursor.fetchone()['Name']
-    return render_template('search_results.html',
-            axes=axes,
-            similar_hotels=similar_hotels,
-            hotel_details=hotel_details,
-            hotel_avail=hotel_avail,
-            base_hotel_name=base_hotel_name,
-            base_hotel_id=base_hotel_id,
-            errors=errors
-            )
-
-
-@app.route('/get_gene_values')
-def get_gene_values():
-    base_hotel_id = int(request.args.get("base_hotel_id"))
-    comp_hotel_id = int(request.args.get("comp_hotel_id"))
-    category = request.args.get("category").strip()
-    sub_category = request.args.get("sub_category").strip()
-    result = genome_distance.get_gene_values.delay(
-            base_hotel_id, comp_hotel_id, category, sub_category)
-    gene_values = result.get(timeout=5)
-    return render_template('gene_values.html', 
-            gene_values=gene_values)
-
-
-@app.route('/test_form')
-def test_form():
-    print request.form
-    test_val = request.args.get("test")
-    return "I got %s" % test_val
-
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0")
