@@ -73,9 +73,10 @@ def handle_search():
     hotel_details = None
     hotel_avail = None
     axes = None
+    base_hotel_name = None
     if not comp_hotels:
         errors["region_id"] = "No hotels found for that destination"
-    elif len(comp_hotels) > 500:
+    elif len(comp_hotels) > 1000:
         errors["region_id"] = "Too many hotels. Narrow down your destination"
     else:
         result = genome_distance.top_n_similar.delay(
@@ -83,7 +84,7 @@ def handle_search():
                 comp_hotels,
                 10
                 )
-        similar_hotels = result.get(timeout=5)
+        similar_hotels = result.get(timeout=10)
         similar_hotel_ids = [s.hotel_id for s in similar_hotels]
         result2 = ean_tasks.get_avail_hotels.delay(
                 date_from,
@@ -93,10 +94,11 @@ def handle_search():
         cursor.execute(
                 """
                 SELECT p.EANHotelID, p.Name, i.ThumbnailURL
-                FROM EAN_ActiveProperties p, EAN_HotelImages i
-                WHERE p.EANHotelID = i.EANHotelID
+                FROM EAN_ActiveProperties p
+                LEFT OUTER JOIN EAN_HotelImages i
+                ON p.EANHotelID = i.EANHotelID
                 AND i.DefaultImage = 1
-                AND p.EANHotelID in (%s)
+                WHERE p.EANHotelID in (%s)
                 """ % ",".join([str(i) for i in similar_hotel_ids])
                 )
         rows = cursor.fetchall()
@@ -106,7 +108,7 @@ def handle_search():
                     'name': r['Name'],
                     'thumbnail_url': r['ThumbnailURL'],
                     }
-        hotel_avail = result2.get(timeout=5)
+        hotel_avail = result2.get(timeout=10)
         axes = []
         genome_distance.conn = g.db
         for k, v in genome_distance.get_axes().iteritems():
@@ -121,7 +123,7 @@ def handle_search():
                 WHERE EANHotelID = %s
                 """, base_hotel_id
                 )
-        base_hotel_name = cursor.fetchone()['Name']
+        base_hotel_name = cursor.fetchone()['Name'].decode('utf-8', 'ignore')
     return render_template('search_results.html',
             axes=axes,
             similar_hotels=similar_hotels,

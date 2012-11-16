@@ -32,7 +32,7 @@ def get_avail_hotels(date_from, date_to, hotel_ids):
     """
     return hotels with availability
     """
-    params = {
+    base_params = {
             "minorRev": 16,
             "apiKey": "5rrrsn5skrcjbhcpggvek38u",
             "cid": "55505",
@@ -41,10 +41,12 @@ def get_avail_hotels(date_from, date_to, hotel_ids):
             "locale": "en_US",
             "currencyCode": "USD"
             }
+    params = {}
     params["arrivalDate"] = date_from
     params["departureDate"] = date_to
     params["hotelIdList"] = ",".join([str(h_id) for h_id in hotel_ids])
-    url = avail_base_url + "?" + urllib.urlencode(params)
+    url = avail_base_url + "?" + urllib.urlencode(base_params) + \
+            urllib.urlencode(params)
     try:
         logger.debug("Request: \n %s" % (str(url)[:1024]))
         request = urllib2.Request(
@@ -61,10 +63,52 @@ def get_avail_hotels(date_from, date_to, hotel_ids):
             "HotelListResponse", {}).get(
                     "HotelList", {}).get(
                             "HotelSummary",[])
+    if type(hotel_list) != list:
+        hotel_list = [hotel_list]
+    while response.get("HotelListResponse", {}).get(
+            "moreResultsAvailable"):
+        params = {}
+        params["cacheKey"] = response.get(
+                "HotelListResponse", {}).get(
+                        "cacheKey", "")
+        params["cacheLocation"] = response.get(
+                "HotelListResponse", {}).get(
+                        "cacheLocation", "")
+        params["customerSessionId"] = response.get(
+                "HotelListResponse", {}).get(
+                        "customerSessionId", "")
+        url = avail_base_url + "?" + urllib.urlencode(base_params) + \
+                urllib.urlencode(params)
+        try:
+            logger.debug("Request: \n %s" % (str(url)[:1024]))
+            request = urllib2.Request(
+                    url=url,
+                    headers={}
+                    )
+            response = urllib2.urlopen(request).read()
+            logger.debug("Response: \n %s" % (str(response)[:1024]))
+        except urllib2.URLError as e:
+            logger.error("Failure %s" % (e.reason))
+        response = json.loads(response)
+        more_hotel_list = response.get(
+                "HotelListResponse", {}).get(
+                        "HotelList", {}).get(
+                                "HotelSummary",[])
+        if type(more_hotel_list) != list:
+            more_hotel_list = [more_hotel_list]
+        hotel_list += more_hotel_list
     for h in hotel_list:
+        if type(h["lowRate"]) == float:
+            low_rate = int(round(h["lowRate"]))
+        else:
+            low_rate = 0
+        if type(h["highRate"]) == float:
+            high_rate = int(round(h["highRate"]))
+        else:
+            high_rate = 0
         avail_hotels[h["hotelId"]] = dict(
-                low_rate=int(round(h["lowRate"],0)),
-                high_rate=int(round(h["highRate"],0)),
+                low_rate=low_rate,
+                high_rate=high_rate,
                 available=True,
                 )
     for h_id in hotel_ids:
