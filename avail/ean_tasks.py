@@ -98,14 +98,8 @@ def get_avail_hotels(date_from, date_to, hotel_ids):
             more_hotel_list = [more_hotel_list]
         hotel_list += more_hotel_list
     for h in hotel_list:
-        if type(h["lowRate"]) == float:
-            low_rate = int(round(h["lowRate"]))
-        else:
-            low_rate = 0
-        if type(h["highRate"]) == float:
-            high_rate = int(round(h["highRate"]))
-        else:
-            high_rate = 0
+        low_rate = int(round(h["lowRate"]))
+        high_rate = int(round(h["highRate"]))
         avail_hotels[h["hotelId"]] = dict(
                 low_rate=low_rate,
                 high_rate=high_rate,
