@@ -16,12 +16,12 @@ import avail.ean_tasks as ean_tasks
 search = Blueprint('search', __name__)
 
 @search.route('/')
-def show_locations():
+def index():
     return render_template('search.html')
 
 
 @search.route('/search')
-def search_page():
+def index():
     return render_template('search.html')
 
 

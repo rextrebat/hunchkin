@@ -13,10 +13,11 @@ import MySQLdb
 import pymongo
 from flask import Flask, g, render_template
 import urllib
+from flask.ext.babel import Babel
 
 from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
-from webapp.views import search, browse_genome
+from webapp.views import search, browse_genome, frontend
 from webapp.models import User
 from webapp.extensions import db, mail, cache, login_manager
 
@@ -26,6 +27,7 @@ __all__ = ['create_app']
 DEFAULT_BLUEPRINTS = (
     browse_genome,
     search,
+    frontend,
     )
 
 
@@ -74,6 +76,8 @@ def configure_extensions(app):
     mail.init_app(app)
 # cache
     cache.init_app(app)
+# babel
+    babel = Babel(app)
 # login
     login_manager.login_view = 'frontend.login'
     login_manager.refresh_view = 'frontend.reauth'
