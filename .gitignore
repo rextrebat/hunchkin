@@ -20,6 +20,8 @@ graveyard/
 #editor backup files
 doc/*~
 doc/*autosave
+doc/*log
+doc/*aux
 
 #settings.py to force creating symbolic link in prod
 # config/settings.py

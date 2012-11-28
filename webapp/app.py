@@ -14,11 +14,15 @@ import pymongo
 from flask import Flask, g, render_template
 import urllib
 from flask.ext.babel import Babel
+from flask.ext.security import Security
+from flask.ext.social import Social
+from flask.ext.security import SQLAlchemyUserDatastore
+from flask.ext.social.datastore import SQLAlchemyConnectionDatastore
 
 from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
 from webapp.views import search, browse_genome, frontend
-from webapp.models import User
+from webapp.models import User, Role, Connection
 from webapp.extensions import db, mail, cache, login_manager
 
 # For import *
@@ -85,6 +89,9 @@ def configure_extensions(app):
     def load_user(id):
         return User.query.get(int(id))
     login_manager.setup_app(app)
+# security and Social
+    app.flask_security = Security(app, SQLAlchemyUserDatastore(db, User, Role))
+    app.flask_social = Social(app, SQLAlchemyConnectionDatastore(db, Connection))
 
 # Configure logging
 

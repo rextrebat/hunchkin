@@ -9,13 +9,27 @@ __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
 
-from werkzeug import (generate_password_hash, check_password_hash,
-                      cached_property)
-from flask.ext.login import UserMixin
+from werkzeug import (generate_password_hash, check_password_hash,)
+from flask.ext.security import UserMixin, RoleMixin
 
 from webapp.extensions import db
 from webapp.models import DenormalizedText
 from webapp.utils import get_current_time, VARCHAR_LEN_128
+
+
+roles_users = db.Table('roles_users',
+    db.Column('user_id', db.Integer(), db.ForeignKey('users.id')),
+    db.Column('role_id', db.Integer(), db.ForeignKey('roles.id')))
+
+
+class Role(db.Model, RoleMixin):
+
+    __tablename__ = "roles"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
 
 
 class User(db.Model, UserMixin):

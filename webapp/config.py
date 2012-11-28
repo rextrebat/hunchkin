@@ -47,6 +47,16 @@ class DefaultConfig(BaseConfig):
     PASSWORD = "rextrebat"
     DB = "hotel_genome"
 
+    SOCIAL_FACEBOOK = {
+            'consumer_key': '401915129878375',
+            'consumer_secret': '087ada986d6c5a54e98ac7d28416b3c5',
+            }
+    SOCIAL_URL_PREFIX = "/social/"
+    SOCIAL_BLUEPRINT_NAME = "social"
+
+    FACEBOOK_APP_ID = '401915129878375'
+    FACEBOOK_APP_SECRET = '087ada986d6c5a54e98ac7d28416b3c5'
+
 
 class TestConfig(BaseConfig):
     TESTING = True
