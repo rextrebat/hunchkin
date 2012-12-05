@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tag genes for hotels based on stored rules"""
+"""Compute overall distance based on chromosome distance"""
 
 __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
 import MySQLdb
 import logging
-from timeit import timeit
 from collections import namedtuple
 from celery import Celery
 import celery
@@ -20,6 +19,8 @@ logger = logging.getLogger("gene_tagger")
 conn = None
 
 hotels = None
+
+unused_measure_types = ('Unused', 'Filter')
 
 celery = Celery('genome_distance', backend="amqp", broker="amqp://")
 
@@ -35,32 +36,26 @@ def get_axes(omit=[]):
     cursor = conn.cursor()
     cursor.execute(
             """
-            SELECT c.category, c.sub_category,
-            c.measure_type, c.similarity_function, c.category_order,
-            c.normalization_factor,
-            GROUP_CONCAT(r.bitmask SEPARATOR ',')
-            FROM genome_categories_v0_80 c, genome_rules r
-            WHERE c.sub_category = r.sub_category
-            AND c.category = r.category
-            GROUP by c.category, c.sub_category;
+            SELECT chromosome_id, category, sub_category, chromosome,
+            category_order, measure_type
+            FROM genome_categories
+            ORDER by category_order, chromosome_id
             """
             )
     rows = cursor.fetchall()
     for r in rows:
-        category, sub_category, measure_type, similarity_function,\
-                category_order, normalization_factor, bits = r
-        if measure_type != "Unused":
-            key = category + "|" + sub_category
-            if key not in omit:
-                axes[key] = dict(
-                        measure_type=measure_type,
-                        similarity_function=similarity_function,
-                        category_order=category_order,
-                        bits=eval("[" + bits + "]"),
-                        normalization_factor=normalization_factor
-                        )
+        chromosome_id, category, sub_category, chromosome_name, \
+                category_order, measure_type = r
+        if measure_type not in unused_measure_types:
+            if (category, sub_category, chromosome_name) not in omit:
+                axes[chromosome_id] = (
+                        category, sub_category, chromosome_name)
     cursor.close()
     return axes
+
+
+def get_similarity_vector(h1, h2, axes):
+    return 
 
 
 def modified_simple_match(g1, g2):
