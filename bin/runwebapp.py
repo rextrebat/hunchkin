@@ -3,11 +3,13 @@
 
 import os
 
-from flask.ext.script import Manager, prompt, prompt_pass, prompt_bool
+from flask.ext.script import Manager
+from gevent.wsgi import WSGIServer
 
 from webapp import create_app
 from webapp.extensions import db
 from webapp.models import User
+
 
 
 manager = Manager(create_app())
@@ -20,7 +22,9 @@ project_root_path = os.path.join(os.path.dirname(app.root_path))
 def run():
     """Run local server."""
 
-    app.run(host='0.0.0.0', debug=True)
+    http_server = WSGIServer(('0.0.0.0', 5000), app)
+    http_server.serve_forever()
+    #app.run(host='0.0.0.0', debug=True)
 
 
 @manager.command
