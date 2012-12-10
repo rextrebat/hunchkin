@@ -11,6 +11,7 @@ import json
 import urllib2
 import urllib
 import genome.genome_distance as genome_distance
+import genome.chromosome_distance as chromosome_distance
 import avail.ean_tasks as ean_tasks
 
 search = Blueprint('search', __name__)
@@ -146,3 +147,112 @@ def get_gene_values():
     gene_values = result.get(timeout=5)
     return render_template('gene_values.html', 
             gene_values=gene_values)
+
+
+@search.route('/search_results_c')
+def handle_search_c():
+    region_id = int(request.args.get("dest_id"))
+    base_hotel_id = int(request.args.get("hotel_id"))
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT rp.EANHotelID 
+            FROM EAN_RegionPropertyMapping rp, EAN_ActiveProperties p
+            WHERE p.EANHotelID = rp.EANHotelID
+            AND rp.RegionID = "%s"
+            """, region_id
+            )
+    rows = cursor.fetchall()
+    comp_hotels = [int(r['EANHotelID']) for r in rows]
+    errors = {}
+    hotel_recos = []
+    similar_hotels = None
+    hotel_avail = None
+    hotel_dict = {}
+    base_hotel_name = None
+    categories = ["STAR RATING", "HOTEL FEATURES", "HOTEL DINING", 
+            "ROOM FEATURES", "LOCATION"]
+    top_sub_cat = 2
+    top_chromosomes = 2
+    if not comp_hotels:
+        errors["region_id"] = "No hotels found for that destination"
+    elif len(comp_hotels) > 1000:
+        errors["region_id"] = "Too many hotels. Narrow down your destination"
+    else:
+        result = chromosome_distance.top_n_similar.apply_async((
+                base_hotel_id,
+                comp_hotels,
+                5
+                ), queue="distance")
+        similar_hotels = result.get(timeout=10)
+        similar_hotel_ids = [s[0] for s in similar_hotels]
+        result2 = ean_tasks.get_avail_hotels.apply_async((
+                date_from,
+                date_to,
+                similar_hotel_ids
+                ), queue="avail")
+        for s in similar_hotels:
+            hotel_dict[s[0]] = dict(
+                    hotel_id=s[0],
+                    aggregate=s[1],
+                    categories=[])
+            for cat in s[2]:
+                if cat[0] == "STAR RATING":
+                    continue
+                positive = []
+                for sc in cat[2][:top_sub_cat]:
+                    positive_s = []
+                    for ch in sc[2][:top_chromosomes]:
+                        positive_s.append(ch[0])
+                    if positive_s:
+                        positive.append(" and ".join(positive_s))
+                negative = []
+                for sc in cat[2][-top_sub_cat:]:
+                    negative_s = []
+                    for ch in sc[2][-top_chromosomes:]:
+                        negative_s.append(ch[0])
+                    if negative_s:
+                        negative.append(" and ".join(negative_s))
+                hotel_dict[s[0]]["categories"].append(dict(
+                    category_name=cat[0],
+                    positive=positive,
+                    negative=negative,
+                    ))
+        cursor.execute(
+                """
+                SELECT p.EANHotelID, p.Name, p.StarRating, i.ThumbnailURL
+                FROM EAN_ActiveProperties p
+                LEFT OUTER JOIN EAN_HotelImages i
+                ON p.EANHotelID = i.EANHotelID
+                AND i.DefaultImage = 1
+                WHERE p.EANHotelID in (%s)
+                """ % ",".join([str(i) for i in similar_hotel_ids])
+                )
+        rows = cursor.fetchall()
+        for r in rows:
+            hotel_dict[r['EANHotelID']]['name'] = r['Name']
+            hotel_dict[r['EANHotelID']]['star_value'] = str(r[
+                'StarRating']) + " Stars"
+            hotel_dict[r['EANHotelID']]['thumbnail_url'] = r[
+                    'ThumbnailURL']
+        hotel_avail = result2.get(timeout=10)
+        for k, v in hotel_avail.iteritems():
+            hotel_dict[k] = dict(hotel_dict[k].items() + v.items())
+        hotel_recos = hotel_dict.values()
+        hotel_recos.sort(key=lambda h:h["aggregate"], reverse=True)
+        cursor.execute(
+                """
+                SELECT Name
+                FROM EAN_ActiveProperties
+                WHERE EANHotelID = %s
+                """, base_hotel_id
+                )
+        base_hotel_name = cursor.fetchone()['Name'].decode('utf-8', 'ignore')
+    return render_template('search_results_c.html',
+            hotel_recos=hotel_recos,
+            base_hotel_name=base_hotel_name,
+            base_hotel_id=base_hotel_id,
+            errors=errors
+            )

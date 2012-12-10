@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<style>
+</style>
+<header class="jumbotron subhead">
+{% if errors.region_id is defined %}
+    <p class="text-error"><h2>{{ errors.region_id }}</h2></p>
+{% else %}
+<h3>Since you liked <em>{{ base_hotel_name}}</em>, our recommendations for you are:</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th><strong>Hotel Features</strong></th>
+                <th><strong>Hotel Dining</strong></th>
+                <th><strong>Room Features</strong></th>
+                <th><strong>Location</strong></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for hotel in hotel_recos %}
+            <tr>
+                <td>
+                    <p> <strong>{{ hotel.name }}</strong> </p>
+                    <p><img class="img-rounded" src="{{ hotel.thumbnail_url }}"></p>
+                    <p> <strong>{{ hotel.star_value }}</strong> </p>
+                    {# 
+                    <p><img src="{{ hotel.star_image }}"></p>
+                    <p><img src="{{ hotel.ta_image }}"></p>
+                    #}
+                    {% if hotel.available == True %}
+                    <p><span class="label label-info">${{hotel.low_rate}} and up</span></p>
+                    {% else %}
+                    <p><span class="label label-error">Unavailable</span></p>
+                    {% endif %}
+                </td>
+                {% for cat in hotel.categories %}
+                <td>
+                    <table class="table">
+                        <tbody>
+                            {% for chr in cat.positive %}
+                            <tr class="success">
+                                <td>{{ chr }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% for chr in cat.negative %}
+                            <tr class="error">
+                                <td>{{ chr }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            <tr></tr>
+        </tbody>
+    </table>
+    <h4><em><p class="text-info">
+            Comparison: Green indicates top aspects within a category in which this hotel is better than the reference hotel. Red indicates top aspects within a category in which this hotel is worse than the reference hotel.
+    </p></em></h4>
+</header>
+{% endif %}
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(function() {
+    $(".class_gene_value").click(function() {
+        var $link = $(this);
+        $.ajax({
+            url: $link.attr("href"),
+            data_type: "html",
+            async: false,
+            success: function(data) {
+                $("#gene_value_dialog").html(data);
+                $("#gene_value_dialog").dialog({
+                    modal:true,
+                    buttons: {
+                        Ok: function() {
+                            $(this).dialog( "close" );
+                        }
+                    }
+                });
+            }
+        });
+        return false;
+    });
+});
+</script>
+{% endblock %}
+

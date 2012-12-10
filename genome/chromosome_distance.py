@@ -9,8 +9,12 @@ import MySQLdb
 import logging
 from collections import namedtuple
 from celery import Celery
-import celery
 from celery.signals import worker_init, task_prerun
+from itertools import groupby
+import scipy
+from operator import itemgetter
+
+from config.celeryconfig import CeleryConfig
 
 # ---GLOBALS
 
@@ -20,163 +24,117 @@ conn = None
 
 hotels = None
 
-unused_measure_types = ('Unused', 'Filter')
+unused_measure_types = ('unused', 'filter')
 
-celery = Celery('genome_distance', backend="amqp", broker="amqp://")
+celery = Celery('genome.chromosome_distance',
+        backend="amqp", broker="amqp://")
+celery.config_from_object(CeleryConfig)
 
-
-SimilarHotel = namedtuple(
-        'SimilarHotel',
-        'hotel_id, similarity, aggregate_similarity'
-        )
+CHROMOSOME_LENGTH = 150
 
 
 def get_axes(omit=[]):
-    axes = {}
+    axes = []
     cursor = conn.cursor()
     cursor.execute(
             """
-            SELECT chromosome_id, category, sub_category, chromosome,
+            SELECT category, sub_category, chromosome, chromosome_id,
             category_order, measure_type
             FROM genome_categories
-            ORDER by category_order, chromosome_id
+            ORDER by category_order, category, sub_category, chromosome
             """
             )
     rows = cursor.fetchall()
     for r in rows:
-        chromosome_id, category, sub_category, chromosome_name, \
+        category, sub_category, chromosome_name, chromosome_id, \
                 category_order, measure_type = r
         if measure_type not in unused_measure_types:
             if (category, sub_category, chromosome_name) not in omit:
-                axes[chromosome_id] = (
-                        category, sub_category, chromosome_name)
+                axes.append(
+                        (category, sub_category, 
+                            chromosome_name, chromosome_id))
     cursor.close()
     return axes
 
 
-def get_similarity_vector(h1, h2, axes):
-    return 
+def get_hotel_chromosome_from_cache(h_id):
+    return None
 
 
-def modified_simple_match(g1, g2):
-    """
-    Parameters - lists with gene values
-    Modified simple matching - (m00 + m11) / (m00 + m01 + m10 + m11)
-    m00 (absent in both) is down-weighted by 50%
-    """
-    g = zip(g1, g2)
-    m11 = float(len([p for p in g if p[0] == 1 and p[1] == 1]))
-    m00 = float(len([p for p in g if p[0] == 0 and p[1] == 0]))
-    m01 = float(len([p for p in g if p[0] == 0 and p[1] == 1]))
-    m10 = float(len([p for p in g if p[0] == 1 and p[1] == 0]))
-    den = m11 + 0.5*m00 + m01 + m10
-    if den:
-        return (m11 + 0.5*m00) / den
-    else:
-        return 0
+def put_hotel_chromosome_in_cache(h_id, chromosomes):
+    return
 
 
-def jaccard_similarity(g1, g2):
+def get_hotel_chromosomes(hotel_ids):
     """
-    Parameters - lists with gene VALUES
-    Return - jaccard distance (float)
-    http://en.wikipedia.org/wiki/Jaccard_index
+    Create a list with chromosome_id offset as the score for that chromosome
+    FIXME: Add cache functionality
     """
-    g = zip(g1, g2)
-    m11 = float(len([p for p in g if p[0] == 1 and p[1] == 1]))
-    m01 = float(len([p for p in g if p[0] == 0 and p[1] == 1]))
-    m10 = float(len([p for p in g if p[0] == 1 and p[1] == 0]))
-    # m00 = float(len([p for p in g if p[0] == 0 and p[1] == 0]))
-    if m11:
-        return m11 / (m01 + m10 + m11)
-    else:
-        return 0
+    if not hotel_ids:
+        return None
+    hotel_id_in = ','.join([str(h) for h in hotel_ids])
+    cursor = conn.cursor()
+    cursor.execute(
+            """
+            SELECT hotel_id, chromosome_id, normalized_score
+            FROM hotel_chromosome
+            WHERE hotel_id in (%s)
+            ORDER BY hotel_id, chromosome_id
+            """ % hotel_id_in
+            )
+    results = cursor.fetchall()
+    hotel_chromosomes = {}
+    for key, group in groupby(results, lambda x: x[0]):
+        chromosomes = [0.0]*CHROMOSOME_LENGTH
+        for g in group:
+            chromosomes[g[1]] = g[2]
+        hotel_chromosomes[key] = chromosomes
+    cursor.close()
+    return hotel_chromosomes
 
 
-def cosine_similarity(g1, g2):
+def get_chromosome_similarity(h1, h2):
     """
-    Parameters - lists with gene values
+    parameters: two chromosome score lists
+    Get 1 - (absolute distance) on each chromosome
     """
-    g = zip(g1, g2)
-    dotp = float(sum([p[0] * p[1] for p in g]))
-    modg1 = float(sum(p ** 2 for p in g1)) ** 0.5
-    modg2 = float(sum(p ** 2 for p in g2)) ** 0.5
-    den = modg1 * modg2
-    if den:
-        return dotp / den
-    else:
-        return 0
+    return [1 - abs(v1 - v2) for (v1, v2) in zip(h1, h2)]
 
 
-def euclidean_similarity(g1, g2, normalization_factor):
+def get_similarity(h1, h2, axes):
     """
-    Simple euclidean distance
+    parameters: chromosomes of two hotels and axes
+    axes: (category, sub_category, chromosome_name, chromosome_id)
+    return: aggregate_similarity, category_similarity, sub_category_similarity
     """
-    g = zip(g1, g2)
-    dist = float(sum([(p[0] -p[1]) ** 2 for p in g])) ** 0.5
-    norm_dist = dist / normalization_factor
-    return (1.0 - norm_dist)
-
-
-def loc_step(v):
-    """
-    Step function for location data
-    //FIXME: do better statistical analysis
-    """
-    if v < 3:
-        return 1
-    if v < 6:
-        return 2
-    if v < 10:
-        return 3
-    if v < 15:
-        return 4
-    if v < 25:
-        return 5
-    else:
-        return 6
-
-
-def loc_euclidean_similarity(g1, g2, normalization_factor):
-    """
-    Step-function on measure + Euclidean distance
-    //FIXME: Needs to be fixed in raw data
-    only scalar values here
-    """
-    g1 = [loc_step(v) for v in g1]
-    g2 = [loc_step(v) for v in g2]
-    return euclidean_similarity(g1, g2, normalization_factor)
-
-
-@celery.task
-def hotel_similarity_vector(axes, h1, h2):
-    """
-    Parameters: hotel ids
-    Output: dict of distance(float) by axis
-    """
-    logger.debug("Similarity: %d %d" % (h1, h2))
-    similarity = {}
-    for a, v in axes.iteritems():
-        g1 = [hotels[h1][b] for b in v['bits']]
-        g2 = [hotels[h2][b] for b in v['bits']]
-        if v['similarity_function'] == 'Cosine':
-            similarity[a] = round(cosine_similarity(g1, g2),2)
-        elif v['similarity_function'] == 'Modified_Simple_Match':
-            similarity[a] = round(modified_simple_match(g1, g2),2)
-        elif v['similarity_function'] == 'Euclidean':
-            similarity[a] = round(euclidean_similarity(
-                g1, g2, v['normalization_factor']),2)
-        elif v['similarity_function'] == 'Loc_Euclidean':
-            similarity[a] = round(loc_euclidean_similarity(
-                g1, g2, v['normalization_factor']),2)
-    return similarity
-
-
-def aggregate_similarity(similarity):
-    """
-    Return the aggregate similarity
-    """
-    return sum([v for v in similarity.itervalues()])
+    c_similarity = get_chromosome_similarity(h1, h2)
+    similarity = []
+    for k1, g1 in groupby(axes, lambda x: x[0]):
+        cat_sim = []
+        for k2, g2 in groupby(g1, lambda x: x[1]):
+            sub_cat_sim = []
+            for g3 in g2:
+                sub_cat_sim.append((g3[2], c_similarity[g3[3]]))
+            sub_cat_sim.sort(key=itemgetter(1), reverse=True)
+            cat_sim.append(
+                    (
+                        k2,
+                        scipy.mean([float(s) for (c, s) in sub_cat_sim]),
+                        sub_cat_sim
+                        )
+                    )
+        cat_sim.sort(key=itemgetter(1), reverse=True)
+        similarity.append(
+                (
+                    k1,
+                    scipy.mean([s for (sc, s, c) in cat_sim]),
+                    cat_sim
+                    )
+                )
+    aggregate_similarity = scipy.mean(
+            [s for (c, s, sc) in similarity]
+            )
+    return (aggregate_similarity, similarity)
 
 
 @celery.task
@@ -191,12 +149,13 @@ def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
     """
     axes = get_axes(axes_omissions)
     similar_hotels = []
+    base_hotel_chromosomes = get_hotel_chromosomes([base_h_id])[base_h_id]
+    comp_hotel_chromosomes = get_hotel_chromosomes(comp_hotels)
     for c in comp_hotels:
-        similarity = hotel_similarity_vector(axes, base_h_id, c)
-        aggregate_similarity = sum([v for v in similarity.itervalues()])
-        similar_hotels.append(SimilarHotel(
-                c, similarity, aggregate_similarity))
-    similar_hotels.sort(key=lambda sim: sim[2], reverse=True)
+        aggregate_similarity, similarity = get_similarity(
+                base_hotel_chromosomes, comp_hotel_chromosomes[c], axes)
+        similar_hotels.append((c, aggregate_similarity, similarity))
+    similar_hotels.sort(key=itemgetter(1), reverse=True)
     return similar_hotels[:n_hotels]
 
 
@@ -231,31 +190,6 @@ def get_gene_values(base_h_id, comp_h_id, category, sub_category):
     return gene_values
 
 
-def load_hotels(selection=None):
-    """
-    Load all hotels in DB otherwise only selection
-    """
-    global hotels
-    hotels = {}
-    logging.debug("[X] Starting loading hotels...")
-    cursor = conn.cursor()
-    query = """
-    SELECT hotel_id, genome
-    FROM hotel_genome
-    """
-    if selection:
-        selection = [str(s) for s in selection]
-        query += """
-        WHERE hotel_id in (%s)
-        """ % ",".join(selection)
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    for r in rows:
-        hotels[r[0]] = eval("[" + r[1] + "]")
-    logging.debug("[X] Done loading hotels...")
-    cursor.close()
-
-
 @worker_init.connect
 def initialize_genome_distance(sender=None, conf=None, **kwargs):
 
@@ -268,8 +202,6 @@ def initialize_genome_distance(sender=None, conf=None, **kwargs):
         db="hotel_genome"
     )
 
-    logger.info("[2] Loading hotels data")
-    load_hotels()
 
 
 @task_prerun.connect
@@ -308,22 +240,22 @@ if __name__ == '__main__':
     )
 
 
-    logger.info("[1] Loading Similarity Axes")
-    axes = get_axes()
+    #logger.info("[1] Loading Similarity Axes")
+    #axes = get_axes()
 
-    logger.info("[2] Loading hotels data")
-    selection = [228014,125813,188071,111189,212448]
-    load_hotels(selection)
+    #logger.info("[2] Loading hotels data")
+    #selection = [228014,125813,188071,111189,212448]
 
     logger.info("[3] Computing Distances")
-    print hotel_similarity_vector(axes, 228014, 125813)
+    print top_n_similar(228014, [125813,188071,111189,212448], 3)
 
-    #logger.info("[4] Timing 1000 invocations of genome distance function")
-    #print timeit('sim = hotel_similarity_vector(228014, 125813)',
-    #        setup='from __main__ import hotel_similarity_vector', number=1000)
+#    logger.info("[4] Timing 1000 invocations of genome distance function")
+#    from timeit import timeit
+#    print timeit('sim = top_n_similar(228014, [125813,188071,111189,212448], 3)',
+#            setup='from __main__ import top_n_similar', number=1000)
 
-    logger.info("[4] Getting gene values")
-    print get_gene_values(228014, 125813, "HOTEL AMENITIES", "Pool")
+    #logger.info("[4] Getting gene values")
+    #print get_gene_values(228014, 125813, "HOTEL AMENITIES", "Pool")
 
     logger.info("[5] Done")
     conn.close()

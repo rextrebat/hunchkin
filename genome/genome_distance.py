@@ -10,8 +10,9 @@ import logging
 from timeit import timeit
 from collections import namedtuple
 from celery import Celery
-import celery
 from celery.signals import worker_init, task_prerun
+
+from config.celeryconfig import CeleryConfig
 
 # ---GLOBALS
 
@@ -21,7 +22,8 @@ conn = None
 
 hotels = None
 
-celery = Celery('genome_distance', backend="amqp", broker="amqp://")
+celery = Celery('genome.genome_distance', backend="amqp", broker="amqp://")
+celery.config_from_object(CeleryConfig)
 
 
 SimilarHotel = namedtuple(
