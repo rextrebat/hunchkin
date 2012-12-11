@@ -7,7 +7,6 @@ __version__ = "0.0pre0"
 
 import MySQLdb
 import logging
-from collections import namedtuple
 from celery import Celery
 from celery.signals import worker_init, task_prerun
 from itertools import groupby
@@ -101,11 +100,19 @@ def get_chromosome_similarity(h1, h2):
     return [1 - abs(v1 - v2) for (v1, v2) in zip(h1, h2)]
 
 
+def get_chromosome_similarity_better(hbase, hcomp):
+    """
+    parameters: chromosome lists for base and comp hotels
+    Get how much "better" comp is w.r.t. base
+    """
+    return [v2 - v1 for (v1, v2) in zip(hbase, hcomp)]
+
+
 def get_similarity(h1, h2, axes):
     """
     parameters: chromosomes of two hotels and axes
     axes: (category, sub_category, chromosome_name, chromosome_id)
-    return: aggregate_similarity, category_similarity, sub_category_similarity
+    return: aggregate_similarity, similarity structure
     """
     c_similarity = get_chromosome_similarity(h1, h2)
     similarity = []
@@ -137,6 +144,42 @@ def get_similarity(h1, h2, axes):
     return (aggregate_similarity, similarity)
 
 
+def get_similarity_better(hbase, hcomp, axes):
+    """
+    parameters: chromosomes of two hotels and axes
+    axes: (category, sub_category, chromosome_name, chromosome_id)
+    return: aggregate_similarity, similarity structure
+    """
+    c_similarity = get_chromosome_similarity_better(hbase, hcomp)
+    similarity = []
+    for k1, g1 in groupby(axes, lambda x: x[0]):
+        cat_sim = []
+        for k2, g2 in groupby(g1, lambda x: x[1]):
+            sub_cat_sim = []
+            for g3 in g2:
+                sub_cat_sim.append((g3[2], c_similarity[g3[3]]))
+            sub_cat_sim.sort(key=itemgetter(1))
+            cat_sim.append(
+                    (
+                        k2,
+                        scipy.mean([float(s) for (c, s) in sub_cat_sim]),
+                        sub_cat_sim
+                        )
+                    )
+        cat_sim.sort(key=itemgetter(1))
+        similarity.append(
+                (
+                    k1,
+                    scipy.mean([s for (sc, s, c) in cat_sim]),
+                    cat_sim
+                    )
+                )
+    aggregate_similarity = scipy.mean(
+            [s for (c, s, sc) in similarity]
+            )
+    return (aggregate_similarity, similarity)
+
+
 @celery.task
 def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
     """
@@ -152,7 +195,7 @@ def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
     base_hotel_chromosomes = get_hotel_chromosomes([base_h_id])[base_h_id]
     comp_hotel_chromosomes = get_hotel_chromosomes(comp_hotels)
     for c in comp_hotels:
-        aggregate_similarity, similarity = get_similarity(
+        aggregate_similarity, similarity = get_similarity_better(
                 base_hotel_chromosomes, comp_hotel_chromosomes[c], axes)
         similar_hotels.append((c, aggregate_similarity, similarity))
     similar_hotels.sort(key=itemgetter(1), reverse=True)
