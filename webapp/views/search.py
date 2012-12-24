@@ -151,6 +151,7 @@ def get_gene_values():
 
 @search.route('/search_results_c')
 def handle_search_c():
+    show_g = request.args.get("show_g", None)
     region_id = int(request.args.get("dest_id"))
     base_hotel_id = int(request.args.get("hotel_id"))
     date_from = request.args.get("date_from")
@@ -197,10 +198,14 @@ def handle_search_c():
             hotel_dict[s[0]] = dict(
                     hotel_id=s[0],
                     aggregate=s[1],
-                    categories=[])
+                    categories=[],
+                    category_scores=[]
+                    )
             for cat in s[2]:
                 if cat[0] == "STAR RATING":
                     continue
+                hotel_dict[s[0]]["category_scores"].append(
+                        round(cat[1] * 100))
                 positive = []
                 for sc in cat[2][:top_sub_cat]:
                     positive_s = []
@@ -242,6 +247,10 @@ def handle_search_c():
             hotel_dict[k] = dict(hotel_dict[k].items() + v.items())
         hotel_recos = hotel_dict.values()
         hotel_recos.sort(key=lambda h:h["aggregate"], reverse=True)
+        cat_score_min = min(
+                [min(h["category_scores"]) for h in hotel_recos])
+        cat_score_max = max(
+                [max(h["category_scores"]) for h in hotel_recos])
         cursor.execute(
                 """
                 SELECT Name
@@ -250,8 +259,13 @@ def handle_search_c():
                 """, base_hotel_id
                 )
         base_hotel_name = cursor.fetchone()['Name'].decode('utf-8', 'ignore')
-    return render_template('search_results_c.html',
+    if show_g:
+        template = "search_results_g.html"
+    else:
+        template = "search_results_c.html"
+    return render_template(template,
             hotel_recos=hotel_recos,
+            category_scores_range=[cat_score_min, cat_score_max],
             base_hotel_name=base_hotel_name,
             base_hotel_id=base_hotel_id,
             errors=errors

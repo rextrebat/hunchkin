@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<style>
+#map_canvas {
+    height: 600px;
+    width: 1200px;
+}
+.table td {
+    text-align: center;
+}
+.table th {
+    text-align: center;
+}
+.bar.positive {
+  fill: steelblue;
+}
+
+.bar.negative {
+  fill: brown;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+</style>
+<header class="jumbotron subhead">
+<script type="text/javascript"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4YZLyMqH7XhEx6zJDRbEeaVdvIkGFndc&sensor=false">
+</script>
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+function sim_chart(selector, sim_data){
+    d3.select(selector)
+        .append("ul")
+        .selectAll("li")
+        .data(sim_data)
+        .enter()
+        .append("li")
+            .text(function (d) {
+                return d
+            });
+}
+function sim_chart2(selector, sim_data, sim_data_range){
+    var margin = 5,
+        width = 120,
+        height = 200;
+
+    var x = d3.scale.ordinal()
+        .domain(d3.range(4))
+        .rangeRoundBands([0, width], .1);
+
+    var y = d3.scale.linear()
+        .domain(sim_data_range)
+        .range([height, 0])
+        .nice();
+
+    var colors = {0: "#98abc5", 1: "#7b6888", 2: "#a05d56", 3: "#ff8c00"}
+
+    var svg = d3.select(selector).append("svg")
+        .attr("width", width + margin + margin)
+        .attr("height", height + margin + margin)
+        .append("g")
+        .attr("transform", "translate(" + margin + ", " + margin + ")");
+
+    svg.selectAll(".bar")
+        .data(sim_data)
+        .enter()
+        .append("rect")
+        .attr("x", function(d, i) { return x(i); })
+        .attr("y", function(d) { return y(Math.max(0, d)); })
+        .attr("width", x.rangeBand())
+        .attr("height", function(d) { return Math.abs(y(d) - y(0)); })
+        .attr("fill", function(d, i) {return colors[i]; });
+
+    svg.selectAll("text")
+        .data(sim_data)
+        .enter()
+        .append("text")
+        .text(function(d) { return d; })
+        .attr("x", function(d, i) { return x(i); })
+        .attr("y", function(d) { return y(d) + 10; })
+        .attr("font-family", "sans-serif")
+        .attr("font-weight", "bold")
+        .attr("font-size", "11px")
+        .attr("fill", "black");
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .append("line")
+            .attr("x1", 0)
+            .attr("x2", width)
+            .attr("y1", y(0))
+            .attr("y2", y(0));
+
+
+}
+</script>
+    <script>
+        function load_map() {
+            var mapOptions = {
+            center: new google.maps.LatLng(-34.397, 150.644),
+            zoom: 8,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            var map = new google.maps.Map(document.getElementById("map_canvas"),
+                mapOptions);
+        }
+
+        google.maps.event.addDomListener(window, 'load', load_map);
+
+    </script>
+{% if errors.region_id is defined %}
+    <p class="text-error"><h2>{{ errors.region_id }}</h2></p>
+{% else %}
+<h3>Hunchkin Recommends:</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                {% for hotel in hotel_recos %}
+                <th style="width: 20%">
+                    <table >
+                            <tr>
+                                <td><img class="img-rounded" src="{{ hotel.thumbnail_url }}"></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="height: 40px; overflow:hidden;background-color:yellow">
+                                        <strong>{{ hotel.name | title | center }}</strong>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr style="height: 20px">
+                                <td><strong>{{ hotel.star_value }}</strong></td>
+                            </tr>
+                            <tr style="height: 20px">
+                                {% if hotel.available == True %}
+                                <td><span class="label label-info">${{hotel.low_rate}} and up</span></td>
+                                {% else %}
+                                <td><span class="label label-error">Unavailable</span></td>
+                                {% endif %}
+                            </tr>
+                    </table>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                {% for hotel in hotel_recos %}
+                <td>
+                    <div id="chart_{{ hotel.hotel_id }}"></div>
+                    <script>
+                        sim_chart2("#chart_{{ hotel.hotel_id }}", {{ hotel.category_scores | tojson }}, {{category_scores_range}})
+                    </script>
+                </td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td colspan="5">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Your recommendations compared to <em> {{base_hotel_name}}</em> on:
+                                </th>
+                                <th>
+                                    <span class="label" style="background-color:#98abc5">Features</span>
+                                </th>
+                                <th>
+                                    <span class="label" style="background-color:#7b6888">Dining</span>
+                                </th>
+                                <th>
+                                    <span class="label" style="background-color:#a05d56">Rooms</span>
+                                </th>
+                                <th>
+                                    <span class="label" style="background-color:#ff8c00">Location</span>
+                                </th>
+                            </tr>
+                        </thead>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div id="map_canvas">
+    </div>
+
+{% endif %}
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(function() {
+    $(".class_gene_value").click(function() {
+        var $link = $(this);
+        $.ajax({
+            url: $link.attr("href"),
+            data_type: "html",
+            async: false,
+            success: function(data) {
+                $("#gene_value_dialog").html(data);
+                $("#gene_value_dialog").dialog({
+                    modal:true,
+                    buttons: {
+                        Ok: function() {
+                            $(this).dialog( "close" );
+                        }
+                    }
+                });
+            }
+        });
+        return false;
+    });
+});
+</script>
+{% endblock %}
+
