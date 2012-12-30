@@ -149,9 +149,16 @@ def get_gene_values():
             gene_values=gene_values)
 
 
+def get_sub_category_list(sim):
+    """
+    Return two lists
+    """
+    pass
+
+
 @search.route('/search_results_c')
 def handle_search_c():
-    show_g = request.args.get("show_g", None)
+    show_view = request.args.get("show_view", "")
     region_id = int(request.args.get("dest_id"))
     base_hotel_id = int(request.args.get("hotel_id"))
     date_from = request.args.get("date_from")
@@ -225,9 +232,11 @@ def handle_search_c():
                     positive=positive,
                     negative=negative,
                     ))
+        # Get Hotel Details
         cursor.execute(
                 """
-                SELECT p.EANHotelID, p.Name, p.StarRating, i.ThumbnailURL
+                SELECT p.EANHotelID, p.Name, p.StarRating, i.ThumbnailURL,
+                p.Latitude, p.Longitude
                 FROM EAN_ActiveProperties p
                 LEFT OUTER JOIN EAN_HotelImages i
                 ON p.EANHotelID = i.EANHotelID
@@ -238,15 +247,20 @@ def handle_search_c():
         rows = cursor.fetchall()
         for r in rows:
             hotel_dict[r['EANHotelID']]['name'] = r['Name']
+            hotel_dict[r['EANHotelID']]['star_rating'] = r['StarRating']
             hotel_dict[r['EANHotelID']]['star_value'] = str(r[
                 'StarRating']) + " Stars"
             hotel_dict[r['EANHotelID']]['thumbnail_url'] = r[
                     'ThumbnailURL']
+            hotel_dict[r['EANHotelID']]['Latitude'] = r['Latitude']
+            hotel_dict[r['EANHotelID']]['Longitude'] = r['Longitude']
         hotel_avail = result2.get(timeout=10)
         for k, v in hotel_avail.iteritems():
             hotel_dict[k] = dict(hotel_dict[k].items() + v.items())
         hotel_recos = hotel_dict.values()
         hotel_recos.sort(key=lambda h:h["aggregate"], reverse=True)
+        for i,h in enumerate(hotel_recos, start=1):
+            h['index_img'] = "orange0" + str(i) + ".png"
         cat_score_min = min(
                 [min(h["category_scores"]) for h in hotel_recos])
         cat_score_max = max(
@@ -259,8 +273,23 @@ def handle_search_c():
                 """, base_hotel_id
                 )
         base_hotel_name = cursor.fetchone()['Name'].decode('utf-8', 'ignore')
-    if show_g:
+        #Get co-ordinates for region and each hotel
+        cursor.execute(
+                """
+                SELECT CenterLatitude, CenterLongitude
+                FROM EAN_RegionCenterCoordinates
+                WHERE RegionID = %s
+                """, region_id)
+        r = cursor.fetchone()
+        if r:
+            r_lat, r_long = r['CenterLatitude'], r['CenterLongitude']
+        else:
+            r_lat, r_long = 0, 0
+
+    if show_view.lower() == "g":
         template = "search_results_g.html"
+    elif show_view.lower() == "m":
+        template = "search_results_m.html"
     else:
         template = "search_results_c.html"
     return render_template(template,
@@ -268,5 +297,7 @@ def handle_search_c():
             category_scores_range=[cat_score_min, cat_score_max],
             base_hotel_name=base_hotel_name,
             base_hotel_id=base_hotel_id,
+            region_lat=r_lat,
+            region_long=r_long,
             errors=errors
             )

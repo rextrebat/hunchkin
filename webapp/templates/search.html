@@ -11,7 +11,7 @@
                     <input class = "input-xxlarge" id="destination" type="text" placeholder="City, Airport Code or area...">
                     <span id="dest_err" class="help-block"> </span>
                 </div>
-                <label><strong>Dates</strong></label>
+                <label class="control-label"><strong>Dates</strong></label>
                 <div id="travel_dates" class="inline">
                     <p>
                     <input type="text" id="date_from" name="date_from" >
@@ -34,6 +34,12 @@
                     <label class="checkbox inline">
                         <input id="cb_pets" type="checkbox">Pets?
                     </label>
+                </div>
+                <div>
+                    <p> </p>
+                    <label class="control-label" for="price-range"><strong>Price Range:</strong></label>
+                    <input type="text" id="price-range" style="border: 0; color: #f6931f; font-weight: bold;" />
+                    <div id="price-slider"></div>
                 </div>
                 <div><p> </p></div>
                 <input type="hidden" id="dest_id" name="dest_id">
@@ -65,6 +71,17 @@ var _hotel_names = [];
 var d_index = -1;
 var h_index = -1;
 $(function() {
+        $( "#price-slider" ).slider({
+            range: true,
+            min: 0,
+            max: 500,
+            values: [ 50, 300 ],
+            slide: function( event, ui ) {
+                $( "#price-range" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+            }
+        });
+        $( "#price-range" ).val( "$" + $( "#price-slider" ).slider( "values", 0 ) +
+            " - $" + $( "#price-slider" ).slider( "values", 1 ) );
         $( "#date_from, #date_to").datepicker({
             defaultDate: "+1w",
             minDate: new Date(),
