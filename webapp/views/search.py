@@ -286,6 +286,12 @@ def handle_search_c():
         else:
             r_lat, r_long = 0, 0
 
+# Save the session
+    session = request.environ['beaker.session']
+    session['search_result_sim'] = similar_hotels
+    session['hotel_info'] = hotel_dict
+    session.save()
+
     if show_view.lower() == "g":
         template = "search_results_g.html"
     elif show_view.lower() == "m":
@@ -300,4 +306,24 @@ def handle_search_c():
             region_lat=r_lat,
             region_long=r_long,
             errors=errors
+            )
+
+
+@search.route('/hotel_compare')
+def hotel_compare():
+    session = request.environ['beaker.session']
+    if not session.has_key('search_result_sim'):
+        return "Invalid session. Try again"
+    similar_hotels = session['search_result_sim']
+    similar_hotel_ids = [s[0] for s in similar_hotels]
+    result = chromosome_distance.get_gene_values.apply_async(args=[
+            similar_hotel_ids], queue="distance")
+    subcats, hotel_genes = result.get(timeout=10)
+    hotel_dict = session['hotel_info']
+    return render_template(
+            "subcat_gene_values.html",
+            similar_hotel_ids=similar_hotel_ids,
+            subcats=subcats,
+            hotel_dict=hotel_dict,
+            hotel_genes=hotel_genes,
             )

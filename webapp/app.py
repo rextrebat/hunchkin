@@ -19,6 +19,8 @@ from flask.ext.social import Social
 from flask.ext.security import SQLAlchemyUserDatastore
 from flask.ext.social.datastore import SQLAlchemyConnectionDatastore
 
+from beaker.middleware import SessionMiddleware
+
 from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
 from webapp.views import search, browse_genome, frontend
@@ -47,6 +49,7 @@ def create_app(config=None, app_name=None, blueprints=None):
     app = Flask(__name__)
     configure_app(app, config)
     configure_hook(app)
+    configure_session(app)
     configure_blueprints(app, blueprints)
     configure_extensions(app)
     configure_logging(app)
@@ -70,6 +73,11 @@ def configure_blueprints(app, blueprints):
 
     for blueprint in blueprints:
         app.register_blueprint(blueprint)
+
+
+def configure_session(app):
+    """Configure Beaker session"""
+    app.wsgi_app = SessionMiddleware(app.wsgi_app, app.config['SESSION_OPTS'])
 
 
 def configure_extensions(app):

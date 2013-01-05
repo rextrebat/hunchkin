@@ -202,35 +202,72 @@ def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
     return similar_hotels[:n_hotels]
 
 
-@celery.task
-def get_gene_values(base_h_id, comp_h_id, category, sub_category):
+def get_subcat_axes():
     """
-    Get actual gene values for a sub_category
-    Return (gene_name, base_value, comp_value)
+    Get axes of all sub-categories with functions, bitmasks and names
     """
-    axes = get_axes()
-    bits = axes[category + "|" + sub_category]["bits"]
-    bits = [str(bit) for bit in bits]
     cursor = conn.cursor()
-    print bits
     cursor.execute(
             """
-            SELECT DISTINCT gene_name, bitmask
+            SELECT category, sub_category, function, bitmask, gene_name
             FROM genome_rules
-            WHERE bitmask IN (%s)
-            """ % ','.join(bits)
+            ORDER by category, sub_category
+            """
             )
     rows = cursor.fetchall()
-    gene_values = []
-    for r in rows:
-        name, bit = r
-        gene_values.append((
-            name,
-            hotels[base_h_id][bit],
-            hotels[comp_h_id][bit]
-            ))
-    cursor.close()
-    return gene_values
+    subcats = {}
+    for k_cat, g_cat in groupby(rows, lambda r: r[0]):
+        subcats[k_cat] = {}
+        for k_subcat, g_subcat in groupby(g_cat, lambda r: r[1]):
+            subcats[k_cat][k_subcat] = []
+            for genes in g_subcat:
+                subcats[k_cat][k_subcat].append(
+                        (genes[2], genes[3], genes[4])
+                        )
+    return subcats
+
+
+def get_hotel_genes_by_subcat(subcats, genome):
+    """
+    Get category, sub_category dict of gene values for a hotel
+    """
+    hotel_genes = {}
+    for c, scs in subcats.iteritems():
+        hotel_genes[c] = {}
+        for sc, genes in scs.iteritems():
+            hotel_genes[c][sc] = []
+            for g in genes:
+                if genome[g[1]] > 0:
+                    if g[0] in ('exist', 'compare', 'value'):
+                        hotel_genes[c][sc].append(g[2])
+                    elif g[0] in ('loc_cat'):
+                        hotel_genes[c][sc].append(
+                                g[2] + "-" + str(int(round(genome[g[1]])))
+                                )
+    return hotel_genes
+
+
+@celery.task
+def get_gene_values(hotel_ids):
+    """
+    Get gene values for a list of hotels
+    Return {'hotel_id': {'category': {'sub_category': genes...
+    """
+    hotel_genes = {}
+    subcats = get_subcat_axes()
+    cursor = conn.cursor()
+    cursor.execute(
+            """
+            SELECT hotel_id, genome
+            FROM hotel_genome
+            WHERE hotel_id in (%s)
+            """ % ",".join([str(h) for h in hotel_ids])
+            )
+    for hotel_id, genome_str in cursor.fetchall():
+        genome = [float(g.strip()) for g in genome_str.split(",")]
+        hotel_genes[hotel_id] = get_hotel_genes_by_subcat(
+                subcats, genome)
+    return subcats, hotel_genes
 
 
 @worker_init.connect
@@ -289,8 +326,12 @@ if __name__ == '__main__':
     #logger.info("[2] Loading hotels data")
     #selection = [228014,125813,188071,111189,212448]
 
-    logger.info("[3] Computing Distances")
+    logger.info("[1] Computing Distances")
     print top_n_similar(228014, [125813,188071,111189,212448], 3)
+
+    logger.info("[2] Get Genes")
+    subcats, hotel_genes = get_gene_values([125813, 188071])
+    print hotel_genes
 
 #    logger.info("[4] Timing 1000 invocations of genome distance function")
 #    from timeit import timeit
@@ -300,7 +341,7 @@ if __name__ == '__main__':
     #logger.info("[4] Getting gene values")
     #print get_gene_values(228014, 125813, "HOTEL AMENITIES", "Pool")
 
-    logger.info("[5] Done")
+    logger.info("[3] Done")
     conn.close()
 
 

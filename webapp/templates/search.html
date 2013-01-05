@@ -44,6 +44,7 @@
                 <div><p> </p></div>
                 <input type="hidden" id="dest_id" name="dest_id">
                 <input type="hidden" id="hotel_id" name="hotel_id">
+                <input type="hidden" id="show_view" name="show_view">
                 <div>
                     <button id="search" type"submit" class="btn btn-primary"><i class="icon-search"></i> Search</button>
                 </div>
@@ -194,6 +195,7 @@ $(function() {
             $("#hotel_err").text(" ").show();
             $("#dest_id").attr("value", _dest_ids[d_index]);
             $("#hotel_id").attr("value", _hotel_ids[h_index]);
+            $("#show_view").attr("value", "m");
             return true;
         });
     });

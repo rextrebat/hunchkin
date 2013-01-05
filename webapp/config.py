@@ -57,6 +57,16 @@ class DefaultConfig(BaseConfig):
     FACEBOOK_APP_ID = '401915129878375'
     FACEBOOK_APP_SECRET = '087ada986d6c5a54e98ac7d28416b3c5'
 
+    SESSION_OPTS = {
+            'session.type': 'ext:memcached',
+            'session.url': '127.0.0.1:11211',
+            'session.data_dir': '/var/log/hunchkin/cache',
+            'timeout': 3600,
+            'auto': True,
+            'cookie_expires': True,
+            'invalidate_corrupt': True,
+            }
+
 
 class TestConfig(BaseConfig):
     TESTING = True

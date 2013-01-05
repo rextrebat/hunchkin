@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block page_class %}hotel-compare{% endblock %}
+{% block content %}
+<header class="jumbotron subhead">
+    <table class="table table-bordered">
+        <tr>
+            <th></th>
+            <th></th>
+            {% for h_id in similar_hotel_ids %}
+            <th>
+                <strong>{{ hotel_dict[h_id]['name'] | title }}</strong>
+            </th>
+            {% endfor %}
+        </tr>
+        {% for c, scs in subcats.iteritems() %}
+            {% for sc, genes in scs.iteritems() %}
+            <tr>
+                <td>{{c}}</td>
+                <td>{{sc}}</td>
+                {% for h_id in similar_hotel_ids %}
+                <td>
+                    <ul>
+                        {% for g in hotel_genes[h_id][c][sc] %}
+                        <li>{{g}}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+</header>
+{% endblock %}
+
+{% block javascript %}
+</script>
+{% endblock %}
