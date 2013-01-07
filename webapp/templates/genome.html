@@ -2,33 +2,127 @@
 {% block page_class %}home-page{% endblock %}
 {% block content %}
 <header class="jumbotron subhead">
+<p> </p>
 <h2>Genome for {{ name }}</h2>
-    <div class="row">
-        <div class="span6 offset1">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Category</th>
-                        <th>Sub-Category</th>
-                        <th>Gene</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for gene in genes %}
-                    <tr>
-                        <td>{{ gene.category }}</td>
-                        <td>{{ gene.sub_category }}</td>
-                        <td>{{ gene.gene_name }}</td>
-                        {% if gene.value is sameas True %}
-                            <td><span class="label label-info">"   "</span></td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+<ul id="genetabs" class="nav nav-tabs">
+    <li class="active">
+        <a href="#genes" data-toggle="tab">Gene Values</a>
+    </li>
+    <li>
+        <a href="#chromosome" data-toggle="tab">Chromosome Scores</a>
+    </li>
+    <li>
+        <a href="#subcat" data-toggle="tab">Sub-category Scores</a>
+    </li>
+    <li>
+        <a href="#cat" data-toggle="tab">Category Scores</a>
+    </li>
+</ul>
+<div id="genetabsContent" class="tab-content">
+    <div class="tab-pane fade active in" id="genes">
+        <div class="row">
+            <div class="span6 offset1">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Sub-Category</th>
+                            <th>Chromosome</th>
+                            <th>Gene</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for gene in genes %}
+                        <tr>
+                            <td>{{ gene.category }}</td>
+                            <td>{{ gene.sub_category }}</td>
+                            <td>{{ gene.chromosome }}</td>
+                            <td>{{ gene.gene_name }}</td>
+                            {% if gene.value is sameas True %}
+                                <td><span class="label label-info">"   "</span></td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+    <div class="tab-pane fade" id="chromosome">
+        <div class="row">
+            <div class="span6 offset1">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Sub-Category</th>
+                            <th>Chromosome</th>
+                            <th>Normalized Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in chromosome_scores %}
+                        <tr>
+                            <td>{{c[0]}}</td>
+                            <td>{{c[1]}}</td>
+                            <td>{{c[2]}}</td>
+                            <td>{{c[3]}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="subcat">
+        <div class="row">
+            <div class="span6 offset1">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Sub-Category</th>
+                            <th>Normalized Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sc in subcat_scores %}
+                        <tr>
+                            <td>{{sc[0]}}</td>
+                            <td>{{sc[1]}}</td>
+                            <td>{{sc[2]}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="cat">
+        <div class="row">
+            <div class="span6 offset1">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Normalized Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in cat_scores %}
+                        <tr>
+                            <td>{{c[0]}}</td>
+                            <td>{{c[1]}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 </header>
 
 

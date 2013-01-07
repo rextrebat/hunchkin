@@ -7,6 +7,7 @@ __version__ = "0.0pre0"
 
 import MySQLdb
 from flask import request, g, render_template, Blueprint
+from itertools import groupby
 
 browse_genome = Blueprint('browse_genome', __name__)
 
@@ -37,9 +38,10 @@ def show_hotels():
 def show_genome():
     genes = []
     cursor = g.db.cursor()
+#--------Genes
     cursor.execute(
             """
-            SELECT category, sub_category, gene_name, bitmask
+            SELECT category, sub_category, chromosome, gene_name, bitmask
             FROM genome_rules
             ORDER BY bitmask
             """
@@ -53,23 +55,68 @@ def show_genome():
             """, h_id
             )
     genome = cursor.fetchone()[0]
+    genome = genome.split(",")
     for gene in all_genes:
-        category, sub_category, gene_name, bitmask = gene
+        category, sub_category, chromosome, gene_name, bitmask = gene
         genes.append(
                 {
                     'category': category,
                     'sub_category': sub_category,
+                    'chromosome': chromosome,
                     'gene_name': gene_name.decode("ascii", "ignore"),
                     'value': True if genome[int(bitmask)] == "1" else False
                     }
                 )
+#--------Chromosome
+    cursor.execute(
+            """
+            SELECT gc.category, gc.sub_category, gc.chromosome, hc.normalized_score
+            FROM hotel_chromosome hc, genome_categories gc
+            WHERE hc.chromosome_id = gc.chromosome_id
+            AND hotel_id = %s
+            ORDER BY normalized_score DESC
+            """, h_id
+            )
+    chromosome_scores=cursor.fetchall()
+#--------Sub-category
+    cursor.execute(
+            """
+            SELECT gc.category, gc.sub_category,
+            ROUND(AVG(hc.normalized_score),2) as subcat_score
+            FROM hotel_chromosome hc, genome_categories gc
+            WHERE hc.chromosome_id = gc.chromosome_id
+            AND hotel_id = %s
+            GROUP by gc.category, gc.sub_category
+            ORDER BY subcat_score DESC
+            """, h_id
+            )
+    subcat_scores = cursor.fetchall()
+#--------Category
+    cursor.execute(
+            """
+            SELECT gc.category,
+            ROUND(AVG(hc.normalized_score),2) as cat_score
+            FROM hotel_chromosome hc, genome_categories gc
+            WHERE hc.chromosome_id = gc.chromosome_id
+            AND hotel_id = %s
+            GROUP by gc.category
+            ORDER BY cat_score DESC
+            """, h_id
+            )
+    cat_scores = cursor.fetchall()
+#--------Name
     cursor.execute(
             """
             SELECT name FROM hotel_basic
             WHERE hotel_id = %s
             """, h_id)
     name = cursor.fetchone()[0]
-    return render_template('genome.html', genes=genes, name=name)
+    return render_template('genome.html',
+            genes=genes,
+            chromosome_scores=chromosome_scores,
+            subcat_scores=subcat_scores,
+            cat_scores=cat_scores,
+            name=name)
 
 
 @browse_genome.route('/similar')
