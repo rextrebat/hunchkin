@@ -6,7 +6,6 @@ __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
 import logging
-from celery import Celery
 #import celery
 import urllib2
 import urllib
@@ -14,7 +13,8 @@ import json
 
 from celery.signals import worker_init
 
-from config.celeryconfig import CeleryConfig
+from bin.celeryapp import celery
+
 
 # ---GLOBALS
 
@@ -24,8 +24,8 @@ conn = None
 
 hotels = None
 
-celery = Celery('avail.ean_tasks', backend="amqp", broker="amqp://")
-celery.config_from_object(CeleryConfig)
+# celery = Celery('avail.ean_tasks', backend="amqp", broker="amqp://")
+# celery.config_from_object(CeleryConfig)
 
 
 avail_base_url = "http://api.ean.com/ean-services/rs/hotel/v3/list"

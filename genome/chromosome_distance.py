@@ -7,13 +7,15 @@ __version__ = "0.0pre0"
 
 import MySQLdb
 import logging
-from celery import Celery
+#from celery import Celery
 from celery.signals import worker_init, task_prerun
 from itertools import groupby
 import scipy
 from operator import itemgetter
 
-from config.celeryconfig import CeleryConfig
+from bin.celeryapp import celery
+#from config.celeryconfig import CeleryConfig
+
 
 # ---GLOBALS
 
@@ -25,9 +27,9 @@ hotels = None
 
 unused_measure_types = ('unused', 'filter')
 
-celery = Celery('genome.chromosome_distance',
-        backend="amqp", broker="amqp://")
-celery.config_from_object(CeleryConfig)
+#celery = Celery('genome.chromosome_distance',
+#       backend="amqp", broker="amqp://")
+#celery.config_from_object(CeleryConfig)
 
 CHROMOSOME_LENGTH = 150
 

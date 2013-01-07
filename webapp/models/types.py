@@ -8,10 +8,11 @@ copied from fbone template
 __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
-from sqlalchemy import types
+from sqlalchemy.types import TypeDecorator, Text
+from sqlalchemy.ext.mutable import Mutable
 
 
-class DenormalizedText(types.MutableType, types.TypeDecorator):
+class DenormalizedText(Mutable, TypeDecorator):
     """
 Stores denormalized primary keys that can be
 accessed as a set.
@@ -22,7 +23,7 @@ type is returned
 :param separator: separator character
 """
 
-    impl = types.Text
+    impl = Text
 
     def __init__(self, coerce=int, separator=" ", **kwargs):
 
