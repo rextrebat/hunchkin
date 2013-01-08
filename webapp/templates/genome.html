@@ -52,7 +52,7 @@
     <div class="tab-pane fade" id="chromosome">
         <div class="row">
             <div class="span6 offset1">
-                <table class="table table-striped">
+                <table id="chr_table" class="tablesorter">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -78,7 +78,7 @@
     <div class="tab-pane fade" id="subcat">
         <div class="row">
             <div class="span6 offset1">
-                <table class="table table-striped">
+                <table id="subcat_table" class="tablesorter">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -102,7 +102,7 @@
     <div class="tab-pane fade" id="cat">
         <div class="row">
             <div class="span6 offset1">
-                <table class="table table-striped">
+                <table id="cat_table" class="tablesorter">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -127,5 +127,14 @@
 
 
 
+{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript" src="/static/js/jquery.tablesorter.min.js"></script>
+<script>
+$(document).ready(function() {
+    $("#chr_table,#subcat_table,#cat_table").tablesorter();
+});
+</script>
 {% endblock %}
 
