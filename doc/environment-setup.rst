@@ -5,20 +5,37 @@ Software Setup
 --------------
 
 - Solr
-  sudo apt-get install solr-jetty
+  For now, not installing solr but tar.gz of entire solr install copied over
 
-- MySQL
-  sudo apt-get install mysql-server
+- MySQL::
+    sudo apt-get install mysql-server
   (root password, same as root for box)
 
-- Memcache
+- Memcache::
   sudo apt-get install memcached
 
-- RabbitMQ
+- RabbitMQ::
   sudo apt-get install rabbitmq-server
 
-- Python virtualenvwrapper
+- Python virtualenvwrapper::
   sudo apt-get install virtualenvwrapper
 
-- Python virtualenv
+- Python virtualenv::
+
+
+Installation Steps
+-----------------
+
+1. Make /var/log/hunchkin::
+    sudo mkdir /var/log/hunchkin
+    sudo chown glasscat:glasscat /var/log/Hunchkin
+
+#. Create /etc/hunchkin.conf::
+    [environment]
+    env=PROD
+
+#. Copy solr binary and indexes::
+
+#. 
+
 

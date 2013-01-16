@@ -6,7 +6,7 @@ __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
 import MySQLdb
-from flask import request, g, render_template, Blueprint
+from flask import request, g, render_template, Blueprint, current_app
 import json
 import urllib2
 import urllib
@@ -28,7 +28,8 @@ def index():
 
 @search.route('/dest_search')
 def dest_search():
-    search_url = "http://elric:8983/solr/collection1/ac"
+    search_url_base = current_app.config['SEARCH_URL_BASE']
+    search_url = search_url_base + "collection1/ac"
     search_params = urllib.urlencode({
         'q': request.args.get("region_startsWith"),
         'wt': 'json',
@@ -41,7 +42,8 @@ def dest_search():
 
 @search.route('/prop_search')
 def prop_search():
-    search_url = "http://elric:8983/solr/properties/ac"
+    search_url_base = current_app.config['SEARCH_URL_BASE']
+    search_url = search_url_base + "properties/ac"
     search_params = urllib.urlencode({
         'q': request.args.get("prop_startsWith"),
         'wt': 'json',
