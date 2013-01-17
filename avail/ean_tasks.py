@@ -20,8 +20,6 @@ from bin.celeryapp import celery
 
 logger = logging.getLogger("gene_tagger")
 
-conn = None
-
 hotels = None
 
 # celery = Celery('avail.ean_tasks', backend="amqp", broker="amqp://")

@@ -12,8 +12,10 @@ from celery.signals import worker_init, task_prerun
 from itertools import groupby
 import scipy
 from operator import itemgetter
+import ConfigParser
 
 from bin.celeryapp import celery
+from config.celeryconfig import env_config
 #from config.celeryconfig import CeleryConfig
 
 
@@ -272,18 +274,31 @@ def get_gene_values(hotel_ids):
     return subcats, hotel_genes
 
 
+def connect_db():
+    global conn
+    config = ConfigParser.RawConfigParser()
+    try:
+        config.read('/etc/hunchkin.conf')
+        env = config.get('environment', 'env')
+        if env not in env_config:
+            raise RuntimeError("Environment not defined")
+        else:
+            conf = env_config[env]
+            conn = MySQLdb.Connection(
+                    host=conf['db_host'],
+                    user=conf['db_user'],
+                    passwd=conf['db_passwd'],
+                    db=conf['db_db']
+                    )
+    except:
+        raise RuntimeError("Environment not defined")
+
+
 @worker_init.connect
 def initialize_genome_distance(sender=None, conf=None, **kwargs):
 
-    global conn
     logger.info("[1] Connecting to DB")
-    conn = MySQLdb.Connection(
-        host="localhost",
-        user="appuser",
-        passwd="rextrebat",
-        db="hotel_genome"
-    )
-
+    connect_db()
 
 
 @task_prerun.connect
@@ -301,12 +316,7 @@ def check_connection(**kwargs):
                 )
     except:
         conn.close()
-        conn = MySQLdb.Connection(
-            host="localhost",
-            user="appuser",
-            passwd="rextrebat",
-            db="hotel_genome"
-        )
+        connect_db()
         logger.info("[X] Reconnected to DB")
 
 
@@ -314,13 +324,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
-    conn = MySQLdb.Connection(
-        host="localhost",
-        user="appuser",
-        passwd="rextrebat",
-        db="hotel_genome"
-    )
-
+    connect_db()
 
     #logger.info("[1] Loading Similarity Axes")
     #axes = get_axes()

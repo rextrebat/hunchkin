@@ -20,3 +20,19 @@ class CeleryConfig:
             }
     CELERYD_PID_FILE="/var/log/hunchkin/%n.pid"
     CELERYD_CONCURRENCY=2
+
+env_config = {}
+
+env_config['DEV'] = {
+        'db_host': 'localhost',
+        'db_user': 'appuser',
+        'db_passwd': 'rextrebat',
+        'db_db': 'hotel_genome',
+        }
+
+env_config['PROD'] = {
+        'db_host': 'localhost',
+        'db_user': 'appuser',
+        'db_passwd': 'rextrebat',
+        'db_db': 'hotel_genome',
+        }
