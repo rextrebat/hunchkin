@@ -11,6 +11,7 @@ __version__ = "0.0pre0"
 
 import MySQLdb
 import pymongo
+import pylibmc
 from flask import Flask, g, render_template
 import urllib
 from flask.ext.babel import Babel
@@ -173,10 +174,15 @@ def configure_hook(app):
     def connect_mongo():
         return pymongo.Connection(host=app.config['HOST'])
 
+    def connect_memcached():
+        return pylibmc.Client([app.config['MEMCACHED_SERVER']], binary=True,
+                behaviors={"tcp_nodelay": True, "ketama": True})
+
     @app.before_request
     def before_request():
         g.db = connect_db()
         g.mongo = connect_mongo()
+        g.mc = connect_memcached()
 
 
     @app.teardown_request

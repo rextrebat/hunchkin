@@ -185,7 +185,7 @@ def get_similarity_better(hbase, hcomp, axes):
 
 
 @celery.task
-def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
+def top_n_similar(base_h_id, comp_hotels, n_hotels=None, axes_omissions=[]):
     """
     Find the top n similar hotels
     base_h_id: base hotel to compare to
@@ -203,7 +203,10 @@ def top_n_similar(base_h_id, comp_hotels, n_hotels, axes_omissions=[]):
                 base_hotel_chromosomes, comp_hotel_chromosomes[c], axes)
         similar_hotels.append((c, aggregate_similarity, similarity))
     similar_hotels.sort(key=itemgetter(1), reverse=True)
-    return similar_hotels[:n_hotels]
+    if n_hotels:
+        return similar_hotels[:n_hotels]
+    else:
+        return similar_hotels
 
 
 def get_subcat_axes():

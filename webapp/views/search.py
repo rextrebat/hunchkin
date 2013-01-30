@@ -5,6 +5,12 @@
 __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
+import logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
+logger = logging.getLogger("search")
+
+from sets import Set
 import MySQLdb
 from flask import request, g, render_template, Blueprint, current_app
 import json
@@ -54,90 +60,6 @@ def prop_search():
     return response
 
 
-@search.route('/search_results')
-def handle_search():
-    region_id = int(request.args.get("dest_id"))
-    base_hotel_id = int(request.args.get("hotel_id"))
-    date_from = request.args.get("date_from")
-    date_to = request.args.get("date_to")
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
-    cursor.execute(
-            """
-            SELECT rp.EANHotelID 
-            FROM EAN_RegionPropertyMapping rp, EAN_ActiveProperties p
-            WHERE p.EANHotelID = rp.EANHotelID
-            AND rp.RegionID = "%s"
-            """, region_id
-            )
-    rows = cursor.fetchall()
-    comp_hotels = [int(r['EANHotelID']) for r in rows]
-    errors = {}
-    similar_hotels = None
-    hotel_details = None
-    hotel_avail = None
-    axes = None
-    base_hotel_name = None
-    if not comp_hotels:
-        errors["region_id"] = "No hotels found for that destination"
-    elif len(comp_hotels) > 1000:
-        errors["region_id"] = "Too many hotels. Narrow down your destination"
-    else:
-        result = genome_distance.top_n_similar.delay(
-                base_hotel_id,
-                comp_hotels,
-                10
-                )
-        similar_hotels = result.get(timeout=10)
-        similar_hotel_ids = [s.hotel_id for s in similar_hotels]
-        result2 = ean_tasks.get_avail_hotels.delay(
-                date_from,
-                date_to,
-                similar_hotel_ids
-                )
-        cursor.execute(
-                """
-                SELECT p.EANHotelID, p.Name, i.ThumbnailURL
-                FROM EAN_ActiveProperties p
-                LEFT OUTER JOIN EAN_HotelImages i
-                ON p.EANHotelID = i.EANHotelID
-                AND i.DefaultImage = 1
-                WHERE p.EANHotelID in (%s)
-                """ % ",".join([str(i) for i in similar_hotel_ids])
-                )
-        rows = cursor.fetchall()
-        hotel_details = {}
-        for r in rows:
-            hotel_details[r['EANHotelID']] = {
-                    'name': r['Name'],
-                    'thumbnail_url': r['ThumbnailURL'],
-                    }
-        hotel_avail = result2.get(timeout=10)
-        axes = []
-        genome_distance.conn = g.db
-        for k, v in genome_distance.get_axes().iteritems():
-            category, sub_category = k.split("|")
-            category_order = v['category_order']
-            axes.append((category, sub_category, category_order))
-            axes.sort(key=lambda a: a[2])
-        cursor.execute(
-                """
-                SELECT Name
-                FROM EAN_ActiveProperties
-                WHERE EANHotelID = %s
-                """, base_hotel_id
-                )
-        base_hotel_name = cursor.fetchone()['Name'].decode('utf-8', 'ignore')
-    return render_template('search_results.html',
-            axes=axes,
-            similar_hotels=similar_hotels,
-            hotel_details=hotel_details,
-            hotel_avail=hotel_avail,
-            base_hotel_name=base_hotel_name,
-            base_hotel_id=base_hotel_id,
-            errors=errors
-            )
-
-
 @search.route('/get_gene_values')
 def get_gene_values():
     base_hotel_id = int(request.args.get("base_hotel_id"))
@@ -150,12 +72,291 @@ def get_gene_values():
     return render_template('gene_values.html', 
             gene_values=gene_values)
 
+# ------- Search Functions ------------
 
-def get_sub_category_list(sim):
+def search_get_hotels(region_id):
     """
-    Return two lists
+    get all the hotels for this region_id and cache it if not in cache
+    """
+    mc = g.mc
+    key = "hotels_in_region_" + str(region_id)
+    hotels_in_region = mc.get(key)
+    if not hotels_in_region:
+        cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+        cursor.execute(
+                """
+                    SELECT rp.EANHotelID, p.Name, p.StarRating,
+                    i.ThumbnailURL, p.Latitude, p.Longitude, p.LowRate
+                    FROM EAN_RegionPropertyMapping rp
+                    JOIN EAN_ActiveProperties p
+                    ON rp.EANHotelID = p.EANHotelID
+                    LEFT OUTER JOIN EAN_HotelImages i
+                    ON rp.EANHotelID = i.EANHotelID
+                    AND i.DefaultImage = 1
+                    WHERE rp.RegionID = "%s"
+                """, region_id
+                )
+        rows = cursor.fetchall()
+        hotels_in_region = {}
+        for r in rows:
+            hotels_in_region[r["EANHotelID"]] = r
+        mc.set(key, hotels_in_region, 7200)
+#TODO: parameterize expiration
+    return hotels_in_region
+
+
+def search_get_similarities(region_id, base_hotel_id, comp_hotels):
+    """
+    get similarities for this base_hotel_id and region_id
+    """
+    mc = g.mc
+    key = "similarities_" + str(region_id) + "_" + str(base_hotel_id)
+    similarities = mc.get(key)
+    if not similarities:
+        similarities = search_get_hotel_distances(
+                search_post_hotel_distances(base_hotel_id, comp_hotels))
+        mc.set(key, similarities, 3600)
+    return similarities
+
+
+def search_post_hotel_distances(base_hotel_id, comp_hotels):
+    result = chromosome_distance.top_n_similar.apply_async((
+            base_hotel_id,
+            comp_hotels
+            ), queue="distance")
+    return result
+
+
+def search_get_hotel_distances(dist_handle):
+    similar_hotels = dist_handle.get(timeout=10)
+    return similar_hotels
+#TODO: parameterize timeout
+
+
+def search_add_availibility(date_from, date_to, hotel_recommendations):
+    """
+    add availibility information to recommendations
+    """
+    recommended_ids = [h["hotel_id"] for h in hotel_recommendations]
+    availabilities = search_get_avail(
+            search_post_avail(date_from, date_to, recommended_ids))
+    for k, v in availabilities.iteritems():
+        for i, ri in enumerate(recommended_ids):
+            if k == ri:
+                hotel_recommendations[i] = dict(
+                        hotel_recommendations[i].items() + v.items()
+                        )
+
+
+def search_post_avail(date_from, date_to, similar_hotel_ids):
+    result = ean_tasks.get_avail_hotels.apply_async((
+            date_from,
+            date_to,
+            similar_hotel_ids
+            ), queue="avail")
+    return result
+
+
+def search_get_avail(avail_handle):
+    hotel_avail = avail_handle.get(timeout=10)
+#TODO: parameterize timeout
+    return hotel_avail
+
+
+def search_filter_price_range(all_hotels, selected_hotel_ids,
+        rate_range_low, rate_range_high):
+    """
+    filter out hotels not within this range
+    """
+    for h in selected_hotel_ids:
+        if not rate_range_low <= all_hotels[h]["LowRate"] <= rate_range_high:
+            selected_hotel_ids.remove(h)
+    return
+
+
+def search_prepare_selection(all_hotels, similarities,
+        selected_hotel_ids, n_limit):
+    """
+    Prepare selection for display
+    """
+#TODO: parameterize following constants
+    top_sub_cat = 2
+    top_chromosomes = 2
+
+    hotel_recommendations = []
+    n = 0
+    for s in similarities:
+        if n == n_limit:
+            break
+        if s[0] not in selected_hotel_ids:
+            continue
+        n += 1
+        hotel = dict(
+                hotel_id = s[0],
+                aggregates = s[1],
+                categories = [],
+                category_scores = []
+                )
+        for cat in s[2]:
+            if cat[0] == "STAR RATING":
+                continue
+            hotel["category_scores"].append(
+                    round(cat[1] * 100))
+            positive = []
+            for sc in cat[2][:top_sub_cat]:
+                positive_s = []
+                for ch in sc[2][:top_chromosomes]:
+                    positive_s.append(ch[0])
+                if positive_s:
+                    positive.append(" and ".join(positive_s))
+            negative = []
+            for sc in cat[2][-top_sub_cat:]:
+                negative_s = []
+                for ch in sc[2][-top_chromosomes:]:
+                    negative_s.append(ch[0])
+                if negative_s:
+                    negative.append(" and ".join(negative_s))
+            hotel["categories"].append(dict(
+                category_name=cat[0],
+                positive=positive,
+                negative=negative,
+                ))
+            hotel = dict(
+                    hotel.items() + all_hotels[s[0]].items()
+                    )
+        hotel_recommendations.append(hotel)
+    return hotel_recommendations
+
+
+def get_hotel_name(hotel_id):
+    """
+    return hotel_name given id
+    """
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT Name
+            FROM EAN_ActiveProperties
+            WHERE EANHotelID = %s
+            """, hotel_id
+            )
+    return cursor.fetchone()['Name'].decode('utf-8', 'ignore')
+
+
+def get_region_lat_long(region_id):
+    """
+    Return center of region given region_id
+    """
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT CenterLatitude, CenterLongitude
+            FROM EAN_RegionCenterCoordinates
+            WHERE RegionID = %s
+            """, region_id)
+    r = cursor.fetchone()
+    if r:
+        r_lat, r_long = r['CenterLatitude'], r['CenterLongitude']
+    else:
+        r_lat, r_long = 0, 0
+    return r_lat, r_long
+
+
+def get_reco_ranges(recommendations):
+    """
+    Rate Range
     """
     pass
+
+
+def get_result_template(show_view):
+    """
+    return template
+    """
+    if show_view.lower() == "g":
+        template = "search_results_g.html"
+    elif show_view.lower() == "m":
+        template = "search_results_m.html"
+    else:
+        template = "search_results_c.html"
+    return template
+
+
+@search.route('/search_results')
+def handle_search():
+
+#1. Get request parameters
+    show_view = request.args.get("show_view", "")
+    region_id = int(request.args.get("dest_id"))
+    base_hotel_id = int(request.args.get("hotel_id"))
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    rate_range_low = request.args.get("rate_range_low", 0)
+    rate_range_high = request.args.get("rate_range_high", 100000)
+#TODO: parameterize
+
+
+#2. Get candidate hotels
+    all_hotels = search_get_hotels(region_id)
+    all_hotel_ids = [int(h) for h in all_hotels.iterkeys()]
+#TODO: bail out if too few or too many hotels
+
+#3. Post similarities request
+    similarities = search_get_similarities(
+            region_id,
+            base_hotel_id,
+            all_hotel_ids
+            )
+
+#4. Apply Filters
+    selected_hotel_ids = Set(all_hotel_ids)
+    search_filter_price_range(all_hotels, selected_hotel_ids,
+            rate_range_low, rate_range_high)
+
+
+#5. Prepare Selection
+    recommendations = search_prepare_selection(
+            all_hotels,
+            similarities,
+            selected_hotel_ids,
+            5
+            )
+#TODO: parameterize number in selection
+
+#6. Get availability
+    search_add_availibility(date_from, date_to, recommendations)
+
+#7. Add pins for recommendations
+    for i,h in enumerate(recommendations, start=1):
+        h["index_img"] = "orange0" + str(i) + ".png"
+
+#8. Get base_hotel_name
+    base_hotel_name = get_hotel_name(base_hotel_id)
+
+#9. Get region lat long
+    region_lat, region_long = get_region_lat_long(region_id)
+
+#10. Save session
+    session = request.environ['beaker.session']
+    session['search_result_sim'] = similarities
+    session['hotel_info'] = recommendations
+    session.save()
+
+#11. Get result template
+    template = get_result_template(show_view)
+
+#11. Render
+    return render_template(template,
+            hotel_recos=recommendations,
+            base_hotel_name=base_hotel_name,
+            base_hotel_id=base_hotel_id,
+            region_lat=region_lat,
+            region_long=region_long,
+            errors={}
+            )
+
+
+# ------- Search Functions ------------
 
 
 @search.route('/search_results_c')

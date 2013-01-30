@@ -79,6 +79,8 @@ class DevConfig(BaseConfig):
 
     SEARCH_URL_BASE = "http://elric:8983/solr/"
 
+    MEMCACHED_SERVER = "127.0.0.1"
+
 
 class ProdConfig(BaseConfig):
     TESTING = True
@@ -119,4 +121,6 @@ class ProdConfig(BaseConfig):
             'invalidate_corrupt': True,
             }
 
-    SEARCH_URL_BASE = "http://elric:8983/solr/"
+    SEARCH_URL_BASE = "http://localhost:8983/solr/"
+
+    MEMCACHED_SERVER = "127.0.0.1"

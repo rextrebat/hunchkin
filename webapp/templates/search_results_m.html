@@ -60,8 +60,8 @@
             map:map,
             position:new google.maps.LatLng({{hotel.Latitude}}, {{hotel.Longitude}}),
             icon:"/static/img/{{hotel.index_img}}",
-            cursor:"{{hotel.name | title}}",
-            title:"{{hotel.name | title}}",
+            cursor:"{{hotel.Name | title}}",
+            title:"{{hotel.Name | title}}",
         });
         bounds.extend(new google.maps.LatLng({{hotel.Latitude}}, {{hotel.Longitude}}));
         {% endfor %}
@@ -95,15 +95,15 @@
                                 <img src="/static/img/{{ hotel.index_img }}"/>
                             </div>
                             <div class="span3">
-                                <img class="img-rounded" src="{{ hotel.thumbnail_url }}"/>
+                                <img class="img-rounded" src="{{ hotel.ThumbnailURL }}"/>
                             </div>
                             <div class="span8">
                                 <div class="hotel-name row-fluid"> 
-                                        <strong>{{ hotel.name | title }}</strong>
+                                        <strong>{{ hotel.Name | title }}</strong>
                                 </div>
                                 <div class="row-fluid">
                                     <div class="span6">
-                                        <div class="star_rating" star-rating="{{ hotel.star_rating }}"></div>
+                                        <div class="StarRating" star-rating="{{ hotel.StarRating }}"></div>
                                     </div>
                                     <div class="span6">
                                         <img src="/static/img/ta-sample.gif">
@@ -160,7 +160,7 @@ $(function() {
 </script>
 <script type="text/javascript" src="{{ url_for("static", filename="js/jquery.raty.min.js") }}"></script>
 <script>
-$(".star_rating").raty({
+$(".StarRating").raty({
     readOnly: true,
     path:"/static/img",
     score:function() {
