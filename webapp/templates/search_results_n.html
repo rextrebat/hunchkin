@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<style>
+#map_canvas, #list_view {
+    height: 600px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+#list_view {
+    background: #ccffff;
+}
+
+.hotel-item {
+    background: #ccffff;
+}
+
+#hotel_detail {
+    height: 300px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+#search_options {
+    height: 300px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.hotel-name {
+    height: 40px;
+    margin: 0;
+    padding: 0;
+}
+
+
+.ui-selecting { background: #FECA40; }
+.ui-selecting .handle { background: #FECA40; }
+.ui-selected { background: #F39814; color: white; }
+.ui-selected .handle { background: #F39814; color: white; }
+#hotel_selectable { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+#selectable2 { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+</style>
+<header class="jumbotron subhead">
+<script type="text/javascript"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4YZLyMqH7XhEx6zJDRbEeaVdvIkGFndc&sensor=false">
+</script>
+<script>
+    function load_map() {
+        var mapOptions = {
+        center: new google.maps.LatLng({{region_lat}}, {{region_long}}),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById("map_canvas"),
+            mapOptions);
+        var bounds = new google.maps.LatLngBounds();
+        {% for hotel in hotel_recos %}
+        new google.maps.Marker({
+            map:map,
+            position:new google.maps.LatLng({{hotel.Latitude}}, {{hotel.Longitude}}),
+            icon:"/static/img/{{hotel.index_img}}",
+            cursor:"{{hotel.Name | title}}",
+            title:"{{hotel.Name | title}}",
+        });
+        bounds.extend(new google.maps.LatLng({{hotel.Latitude}}, {{hotel.Longitude}}));
+        {% endfor %}
+        map.fitBounds (bounds)
+    }
+
+    google.maps.event.addDomListener(window, 'load', load_map);
+
+</script>
+{% if errors.region_id is defined %}
+    <p class="text-error"><h2>{{ errors.region_id }}</h2></p>
+{% else %}
+<h3>Hunchkin Recommends:</h3>
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div id="list_view" class="span5">
+            <!-- List View -->
+            <ol id="hotel_selectable" class="ui-selectable">
+            {% set counter = 0 %}
+            {% for hotel in hotel_recos %}
+                <li class="ui-widget-content">
+                    <div class="hotel-item">
+                        <div class="row-fluid" style="height: 7px">
+                        </div>
+                        <div class="list-view-index" style="height: 0px; visibility:hidden">
+                            {{counter}}
+                            {% set counter = counter + 1 %}
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span1">
+                                <img src="/static/img/{{ hotel.index_img }}"/>
+                            </div>
+                            <div class="span3">
+                                <img class="img-rounded" src="{{ hotel.ThumbnailURL }}"/>
+                            </div>
+                            <div class="span8">
+                                <div class="hotel-name row-fluid"> 
+                                        <strong>{{ hotel.Name | title }}</strong>
+                                </div>
+                                <div class="row-fluid">
+                                    <div class="span6">
+                                        <div class="StarRating" star-rating="{{ hotel.StarRating }}"></div>
+                                    </div>
+                                    <div class="span6">
+                                        <img src="/static/img/ta-sample.gif">
+                                    </div>
+                                </div>
+                                <div class="row-fluid">
+                                    <div class="span6">
+                                        {% if hotel.available == True %}
+                                        <span class="label label-info">${{hotel.low_rate}} and up</span>
+                                        {% else %}
+                                        <span class="label label-error">Unavailable</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="span6">
+                                        <button class="btn-mini btn-success pull-right" style="">Book</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid" style="height: 7px">
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+            </ol>
+        </div>
+        <div id="map_canvas" class="span7">
+            <!-- Map View -->
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div id="hotel_detail" class="span5">
+            Hotel Details to be displayed here
+        </div>
+        <div class="span3">
+            <h4><a href="/hotel_compare">Compare hotels</a></h4>
+        </div>
+        <div id="search_options" class="span4">
+            <h4><a href="">Ask your friends about these hotels</a></h4>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(function() {
+    $( "#hotel_selectable" ).selectable({filter: "li"});
+});
+</script>
+<script type="text/javascript" src="{{ url_for("static", filename="js/jquery.raty.min.js") }}"></script>
+<script>
+$(".StarRating").raty({
+    readOnly: true,
+    path:"/static/img",
+    score:function() {
+        return $(this).attr("star-rating");
+    }
+});
+</script>
+{% endblock %}
+
