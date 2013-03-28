@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block page_class %}home-page{% endblock %}
+{% block content %}
+<header class="jumbotron">
+<script type="text/javascript"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4YZLyMqH7XhEx6zJDRbEeaVdvIkGFndc&sensor=false">
+</script>
+<script>
+    function load_map(region_lat, region_long, hotels) {
+        var mapOptions = {
+        center: new google.maps.LatLng(region_lat, region_long),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById("map_canvas"),
+            mapOptions);
+        var bounds = new google.maps.LatLngBounds();
+        for (i = 0; i < hotels.length; i += 1){
+          new google.maps.Marker({
+              map:map,
+              position:new google.maps.LatLng(hotel[i].Latitude, hotel[i].Longitude),
+              icon:"/static/img/orange0" + i.toString(),
+              cursor:hotel[i].name,
+              title:hotel[i].name,
+          });
+          bounds.extend(new google.maps.LatLng(hotel[i].Latitude, hotel[i].Longitude));
+        }
+        map.fitBounds (bounds);
+    }
+
+
+</script>
+
+<div ng-init="region_id={{region_id}};base_hotel_id={{base_hotel_id}};date_from='{{date_from}}';date_to='{{date_to}}'"></div>
+
+<div ng-controller="HotelRecoCtrl">
+
+
+
+{% raw %}
+  <p> 
+  </p>
+<h3>Hunchkin recommends these hotels for you</h3>
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div id="list_view" class="span9">
+            <!-- List View -->
+            <ol id="hotel_selectable" class="ui-selectable">
+                <li class="ui-widget-content" ng-repeat="hotel in selection">
+                  <div class="row-fluid">
+                    <div class="hotel-item span5">
+                        <div class="row-fluid" style="height: 7px">
+                        </div>
+                        <div class="list-view-index" style="height: 0px; visibility:hidden">
+                          {{$index}}
+                        </div>
+                        <div class="row-fluid">
+                            <div class="span1">
+                              <img src="{{'/static/img/orange0' + ($index+1).toString() + '.png'}}"/>
+                            </div>
+                            <div class="span3">
+                              <img class="img-rounded" src="{{hotel.ThumbnailURL}}"/>
+                            </div>
+                            <div class="span8">
+                                <div class="hotel-name row-fluid"> 
+                                  <strong>{{hotel.Name}}</strong>
+                                </div>
+                                <div class="row-fluid">
+                                    <div class="span6" ng-bind-html="ratingHTML(hotel.StarRating)">
+                                    </div>
+                                    <div class="span6">
+                                        <img src="static/img/ta-sample.gif">
+                                    </div>
+                                </div>
+                                <div class="row-fluid">
+                                    <div class="span6" ng-bind-html="priceHTML(hotel.avail_response)">
+                                    </div>
+                                    <div class="span6">
+                                        <button class="btn-mini btn-success pull-right" style="">Book</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row-fluid" style="height: 7px">
+                        </div>
+                    </div>
+                    <div class="hotel-highlights span7">
+                      <ul>
+                          <li>Supervised childcare activities</li>
+                          <li>Full-service health spa</li>
+                          <li class="text-error">Parking charges</li>
+                      </ul>
+                    <div>
+                  </div>
+                </li>
+            </ol>
+        </div>
+        <div id="refinement" class="span3 pull-right">
+          <h5>Improve your recommendations. Tell us more about your preferences</h5>
+          <form class="">
+            <table class="table table-condensed">
+              <tr>
+                <td>
+                  <select id="filter_travel_group" name="filter_travel_group" multiple=multiple" class="btn btn-mini">
+                    <option value="kids">Children</option>
+                    <option value="kids">Seniors</option>
+                    <option value="kids">Pets</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <select id="filter_features" name="filter_features" multiple="multiple" class="btn btn-mini" >
+                    <option value="Health_and_Wellness">Health & Wellness</option>
+                    <option value="Recreation">Recreation</option>
+                    <option value="Bath">Bath</option>
+                    <option value="Room_Views">Room Views</option>
+                    <option value="Room_Features">Room Features</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <select id="filter_location" name="filter_location" multiple="multiple" class="btn btn-mini">
+                    <option value="Attractions">Attractions</option>
+                    <option value="Dining">Dining</option>
+                    <option value="Essential Services">Essential Services</option>
+                    <option value="Recreation">Recreation</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Nightlife">Nightlife</option>
+                  </select>
+                </td>
+              </tr>
+            </table>
+            <p> </p>
+            <table class="table table-condensed">
+              <tr>
+                <td>Price Range:<input type="text" id="filter_price" style=" border: 0; color: #f6931f;" disabled/></td>
+              </tr>
+              <tr>
+                <td><div priceslider id="price-slider" style="width: 200px; margin: 10px;"></div></td>
+              <tr>
+            </table>
+            
+          </form>
+        </div>
+        <div id="survey" class="span3 pull-right">
+          <p><small>Maybe your friends have stayed at these hotels. Ask your friends on Facebook about what they know.</small></p>
+            <button class="btn btn-info btn-block" ng-click="postSurvey()"><i class="icon-facebook-sign icon-2x"></i> Post a poll on Facebook</button>
+        </div>
+    </div>
+</div>
+<p> </p>
+<div id="map_canvas" class="span11 pull-left">
+<!-- Map View -->
+</div>
+
+</div>
+
+{% endraw %}
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(function() {
+    $( "#hotel_selectable" ).selectable({filter: "li"});
+});
+</script>
+<script>
+$(".StarRating").raty({
+    readOnly: true,
+    path:"static/img",
+    score:function() {
+        return $(this).attr("star-rating");
+    }
+});
+$("#filter_travel_group").multiselect({
+  selectedText: 'Travel party',
+  header: false,
+  noneSelectedText: 'Travel party'
+});
+$("#filter_features").multiselect({
+  selectedText: 'Features',
+  header: true,
+  noneSelectedText: 'Features'
+});
+$("#filter_location").multiselect({
+  selectedText: 'Location',
+  header: true,
+  noneSelectedText: 'Location'
+});
+$("#filter_travel_group").multiselect("checkAll");
+$("#filter_features").multiselect("checkAll");
+$("#filter_location").multiselect("checkAll");
+/*
+$( "#price-slider" ).slider({
+  range: true,
+  min: 0,
+  max: 1500,
+  step: 20,
+  values: [ 20, 1400 ],
+  slide: function( event, ui ) {
+      $( "#filter_price" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+  },
+  stop: function( event, ui ) {
+      $( "#filter_price_min").val(ui.values[0]);
+      $( "#filter_price_max").val(ui.values[1]);
+      updateSelection();
+  }
+});
+$( "#filter_price" ).val( "$" + $( "#price-slider" ).slider( "values", 0 ) +
+  " - $" + $( "#price-slider" ).slider( "values", 1 ) );
+$( "#filter_price_min" ).val($( "#price-slider" ).slider( "values", 0 ) );
+$( "#filter_price_max" ).val($( "#price-slider" ).slider( "values", 1 ) );
+*/
+</script>
+{% endblock %}

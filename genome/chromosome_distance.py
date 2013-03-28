@@ -199,7 +199,7 @@ def top_n_similar(base_h_id, comp_hotels, n_hotels=None, axes_omissions=[]):
     base_hotel_chromosomes = get_hotel_chromosomes([base_h_id])[base_h_id]
     comp_hotel_chromosomes = get_hotel_chromosomes(comp_hotels)
     for c in comp_hotels:
-        aggregate_similarity, similarity = get_similarity_better(
+        aggregate_similarity, similarity = get_similarity(
                 base_hotel_chromosomes, comp_hotel_chromosomes[c], axes)
         similar_hotels.append((c, aggregate_similarity, similarity))
     similar_hotels.sort(key=itemgetter(1), reverse=True)

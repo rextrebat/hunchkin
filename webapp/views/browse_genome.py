@@ -64,7 +64,8 @@ def show_genome():
                     'sub_category': sub_category,
                     'chromosome': chromosome,
                     'gene_name': gene_name.decode("ascii", "ignore"),
-                    'value': True if genome[int(bitmask)] == "1" else False
+                    'value': True if genome[int(bitmask)] >= "1" else False,
+                    'raw_value': genome[int(bitmask)]
                     }
                 )
 #--------Chromosome

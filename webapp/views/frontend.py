@@ -10,7 +10,7 @@ from flask.ext.login import (login_required, login_user, current_user,
                             logout_user, confirm_login, login_fresh)
 
 from webapp.models import User
-from webapp.extensions import db, mail, login_manager, facebook
+from webapp.extensions import db, mail, login_manager
 from webapp.forms import (SignupForm, LoginForm, RecoverPasswordForm,
                          ChangePasswordForm, ReauthForm)
 
@@ -139,36 +139,6 @@ def reset_password():
             flash(_('Sorry, no user found for that email address'), 'error')
 
     return render_template('reset_password.html', form=form)
-
-# Facebook
-@frontend.route('/login_fb')
-def login_fb():
-    return facebook.authorize(callback=url_for('frontend.facebook_authorized',
-        next=request.args.get('next') or request.referrer or None,
-        _external=True))
-
-
-@frontend.route('/login/authorized')
-@facebook.authorized_handler
-def facebook_authorized(resp):
-    session['fb_name'] = None
-    if resp is None:
-        session['fb_name'] = "Facebook login error"
-        return 'Access denied: reason=%s error=%s' % (
-            request.args['error_reason'],
-            request.args['error_description']
-        )
-    session['oauth_token'] = (resp['access_token'], '')
-    me = facebook.get('/me')
-    session['fb_name'] = me.data['name']
-    return redirect(url_for('search.index'))
-    #return 'Logged in as id=%s name=%s redirect=%s' % \
-        #(me.data['id'], me.data['name'], url_for("search.index"))
-
-
-@facebook.tokengetter
-def get_facebook_oauth_token():
-    return session.get('oauth_token')
 
 
 @frontend.route('/about')

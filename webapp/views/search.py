@@ -13,21 +13,19 @@ logger = logging.getLogger("search")
 from sets import Set
 import MySQLdb
 from flask import request, g, render_template, Blueprint, current_app
-import json
+import simplejson as json
 import urllib2
 import urllib
+import numpy
+import scipy.stats
 import genome.genome_distance as genome_distance
 import genome.chromosome_distance as chromosome_distance
 import avail.ean_tasks as ean_tasks
 
 search = Blueprint('search', __name__)
 
-@search.route('/')
-def index():
-    return render_template('search.html')
-
-
 @search.route('/search')
+@search.route('/')
 def index():
     return render_template('search.html')
 
@@ -115,7 +113,7 @@ def search_get_similarities(region_id, base_hotel_id, comp_hotels):
     if not similarities:
         similarities = search_get_hotel_distances(
                 search_post_hotel_distances(base_hotel_id, comp_hotels))
-        mc.set(key, similarities, 3600)
+        #mc.set(key, similarities, 3600)
     return similarities
 
 
@@ -190,7 +188,6 @@ def search_prepare_selection(all_hotels, similarities,
             break
         if s[0] not in selected_hotel_ids:
             continue
-        n += 1
         hotel = dict(
                 hotel_id = s[0],
                 aggregates = s[1],
@@ -224,6 +221,8 @@ def search_prepare_selection(all_hotels, similarities,
             hotel = dict(
                     hotel.items() + all_hotels[s[0]].items()
                     )
+            hotel["array_offset"] = n
+        n += 1
         hotel_recommendations.append(hotel)
     return hotel_recommendations
 
@@ -262,11 +261,39 @@ def get_region_lat_long(region_id):
     return r_lat, r_long
 
 
-def get_reco_ranges(recommendations):
+def get_initial_price_limit(ref_hotel_id, region_id):
     """
-    Rate Range
+    Find the initial price limit:
+    1. Find percentile score of price of ref_hotel_id in its region
+    2. Determine what is the equivalent percentile rate in the search region
+    3. Add 100% (configurable) to that
     """
-    pass
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT b.LowRate
+            FROM EAN_ActiveProperties a, EAN_ActiveProperties b
+            WHERE a.RegionID = b.RegionID
+            AND a.EANHotelID = %s
+            """, ref_hotel_id)
+    ref_rates = [float(r['LowRate']) for r in cursor.fetchall()]
+    cursor.execute(
+            """
+            SELECT LowRate
+            FROM EAN_ActiveProperties
+            WHERE EANHotelID = %s
+            """, ref_hotel_id)
+    ref_hotel_low_rate = cursor.fetchone()['LowRate']
+    ref_pc = scipy.stats.percentileofscore(ref_rates,ref_hotel_low_rate)
+    cursor.execute(
+            """
+            SELECT LowRate
+            FROM EAN_ActiveProperties
+            WHERE RegionID = %s
+            """, region_id)
+    search_rates = [float(r['LowRate']) for r in cursor.fetchall()]
+    price_limit_mult = 2.0
+    return numpy.percentile(search_rates, ref_pc) * price_limit_mult
 
 
 def get_result_template(show_view):
@@ -353,6 +380,100 @@ def handle_search():
             region_lat=region_lat,
             region_long=region_long,
             errors={}
+            )
+
+
+@search.route('/search_results_a')
+def handle_search_a():
+    region_id = int(request.args.get("dest_id"))
+    base_hotel_id = int(request.args.get("hotel_id"))
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    return render_template(
+            "search_results_a.html",
+            region_id=region_id,
+            base_hotel_id=base_hotel_id,
+            date_from=date_from,
+            date_to=date_to
+            )
+
+
+@search.route('/search_results_a_ctrl')
+def handle_search_a_ctrl():
+    """
+    Angular.js based search  return json
+    """
+#1. Get request parameters
+    region_id = int(request.args.get("dest_id"))
+    base_hotel_id = int(request.args.get("hotel_id"))
+#TODO: parameterize
+
+#2. Get candidate hotels
+    all_hotels = search_get_hotels(region_id)
+    all_hotel_ids = [int(h) for h in all_hotels.iterkeys()]
+#TODO: bail out if too few or too many hotels
+
+#3. Post similarities request
+    similarities = search_get_similarities(
+            region_id,
+            base_hotel_id,
+            all_hotel_ids
+            )
+
+#4. Prepare Selection
+    selected_hotel_ids = Set(all_hotel_ids)
+    recommendations = search_prepare_selection(
+            all_hotels,
+            similarities,
+            selected_hotel_ids,
+            200
+            )
+#TODO: parameterize number in selection
+    return json.dumps(recommendations)
+
+
+@search.route('/search_results_avail')
+def handle_search_avail():
+    """
+    Return Availability for hotel set
+    """
+#1. Get request parameters
+    hotel_ids = request.args.get("hotel_ids")
+    hotel_ids = [int(h) for h in hotel_ids.split(",")]
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+
+    availabilities = search_get_avail(
+            search_post_avail(date_from, date_to, hotel_ids))
+
+    return json.dumps(availabilities, use_decimal=True)
+
+
+@search.route('/search_results_a_region_coords')
+def handle_search_a_region_coords():
+    """
+    Return region latitude, Longitude
+    """
+    region_id = int(request.args.get("region_id"))
+    region_lat, region_long = get_region_lat_long(region_id)
+    return json.dumps(
+            dict(
+                latitude=region_lat,
+                longitude=region_long
+                ), use_decimal=True
+            )
+
+
+@search.route('/search_results_a_initial_price_limit')
+def handle_search_a_initial_price_limit():
+    """
+    Return initial price limit
+    """
+    region_id = int(request.args.get("region_id"))
+    ref_hotel_id = int(request.args.get("ref_hotel_id"))
+    return json.dumps(
+            get_initial_price_limit(ref_hotel_id, region_id),
+            use_decimal=True
             )
 
 

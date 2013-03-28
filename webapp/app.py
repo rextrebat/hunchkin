@@ -16,15 +16,15 @@ from flask import Flask, g, render_template
 import urllib
 from flask.ext.babel import Babel
 from flask.ext.security import Security
-from flask.ext.social import Social
+#from flask.ext.social import Social
 from flask.ext.security import SQLAlchemyUserDatastore
-from flask.ext.social.datastore import SQLAlchemyConnectionDatastore
+#from flask.ext.social.datastore import SQLAlchemyConnectionDatastore
 
 from beaker.middleware import SessionMiddleware
 
 from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
-from webapp.views import search, browse_genome, frontend
+from webapp.views import search, browse_genome, frontend, social
 from webapp.models import User, Role, Connection
 from webapp.extensions import db, mail, cache, login_manager
 
@@ -35,6 +35,7 @@ DEFAULT_BLUEPRINTS = (
     browse_genome,
     search,
     frontend,
+    social,
     )
 
 
@@ -100,7 +101,7 @@ def configure_extensions(app):
     login_manager.setup_app(app)
 # security and Social
     app.flask_security = Security(app, SQLAlchemyUserDatastore(db, User, Role))
-    app.flask_social = Social(app, SQLAlchemyConnectionDatastore(db, Connection))
+    #app.flask_social = Social(app, SQLAlchemyConnectionDatastore(db, Connection))
 
 # Configure logging
 

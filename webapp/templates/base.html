@@ -1,41 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html ng-app="hunchkin" xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"
+      xmlns:fb="https://www.facebook.com/2008/fbml"> 
+<head {% block head_attributes %}{% endblock %}>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <title>{% block page_title %}Hunchkin{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}{% endblock %}" />
     <meta name="author" content="{% block meta_author %}{% endblock %}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% block meta_tags %}
+    {% endblock %}
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}"/>
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}"/>
     <link rel="stylesheet" href="{{ url_for("static", filename="css/docs.css") }}"/>
     <link rel="stylesheet" href="{{ url_for("static", filename="css/style.css") }}"/>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/font-awesome.min.css") }}"/>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/jquery.multiselect.css") }}"/>
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/hunchkin.css") }}"/>
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css"/>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
+    <script src="{{ url_for("static", filename="js/angular.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/angular-sanitize.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/hunchkin.controllers.js") }}"></script>
     {% block css %}{% endblock %}
 </head>
 
 <body style="padding-top: 50px; background-color: #EEE;">
+  <div id="fb-root"></div>
+  <script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '401695513260834', // App ID
+        status     : true, // check login status
+        cookie     : true, // enable cookies to allow the server to access the session
+        xfbml      : true  // parse XFBML
+      });
+    };
+
+    // Load the SDK Asynchronously
+    (function(d){
+      var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+      js = d.createElement('script'); js.id = id; js.async = true;
+      js.src = "//connect.facebook.net/en_US/all.js";
+      d.getElementsByTagName('head')[0].appendChild(js);
+    }(document));
+  </script>
 {% block body %}
     <!-- Prompt IE 6 users to install Chrome Frame. Remove this if you support IE 6.
        chromium.org/developers/how-tos/chrome-frame-getting-started -->
     <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
-    <div class="navbar navbar-fixed-top">
+    <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="navbar-inner">
             <div class="container">
-            <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-inverse-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </a>
-            <a class="brand" href="/" title="Hunchkin">
-                <img alt="Hunchkin logo" height='40' src="{{ url_for("static", filename="img/logo8.jpeg") }}" width="120" />
-            </a>
+              <a class="brand" href="/" title="Hunchkin"><i class="icon-fire icon-large"></i> Hunchkin </a>
             <div class="nav-collapse collapse navbar-responsive-collapse">
                 <ul class="nav">
                     <li class="active"><a href="#">Tour</a></li>
                 </ul>
                 <ul class="nav pull-right">
+                    <li>
+                        <fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
+                        </fb:login-button>
+                    </li>
+                    {% raw %}
+                    <!--
                     {% if current_user.is_authenticated() %}
                         <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -75,6 +104,8 @@
                         </li>
                         {% endif %}
                     {% endif %}
+                    -->
+                    {% endraw %}
                 </ul>
             </div>
             </div>
@@ -151,9 +182,9 @@
     
     
     {% block javascript_library %}
-    <script src="http://code.jquery.com/jquery.min.js"></script>
-    <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
     <script src="{{ url_for("static", filename="js/bootstrap.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/jquery.multiselect.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/jquery.raty.min.js") }}"></script>
 
     {% endblock %}
     {% block javascript %}{% endblock %}
