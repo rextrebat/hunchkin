@@ -170,8 +170,18 @@ function HotelRecoCtrl($scope, $http) {
                         }
                     }).
                     success(function(data, status) {
-                        var survey_id = data;
-                        alert("Created survey: " + survey_id);
+                        var survey_id = JSON.parse(data);
+                        FB.api(
+                            '/me/hk_survey:post',
+                            'post',
+                            { survey: 'http://hk.jumpingcrab.com:5000/social/survey?survey_id=' + survey_id},
+                            function(response) {
+                                if (!response || response.error) {
+                                    alert ('Could not post survey');
+                                } else {
+                                    alert ('Posted a survey on Facebook');
+                                }
+                            });
                     });
             }
         });
