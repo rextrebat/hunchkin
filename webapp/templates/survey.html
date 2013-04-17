@@ -10,46 +10,97 @@
   <meta property="hk_survey:survey_id" content="{{ survey_id }}" />
 {% endblock %}
 {% block content %}
-  <p> 
-  </p>
-  <h3>Hunchkin Survey</h3>
-  <p>
-  <strong>{{ created_by_name }}</strong> is planning to visit <strong>{{ region_name }}</strong> and is thinking of these hotels. Can you help {{ created_by_first_name }} with your inputs?
-  </p>
-  <form>
-    <div class="container-fluid">
-      <div class="row-fluid">
-        <div class="span12">
-          <table class = "table table-striped">
-            <thead>
-              <tr>
-                <th>Hotel</th>
-                <th>Overall</th>
-                <th>Location</th>
-                <th>Facilities</th>
-                <th>Service</th>
-                <th>Cleanliness</th>
-                <th>Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for hotel in hotels %}
-              <tr>
-                <td>{{hotel[1]}}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+<div class="row-fluid">
+    <div class="box span12">
+        <div class="box-header">
+            <h2>
+                <i class="halflings-icon user"></i>
+                <span class="break"></span>
+                Hunchkin Survey
+            </h2>
         </div>
-      </div>
-    </div>
-    <input type="button" value="Save"/>
-  </form>
+        <div class="box-content">
+            <p>
+            <strong>{{ created_by_name }}</strong> is planning to visit <strong>{{ region_name }}</strong> and is thinking of these hotels. Can you help {{ created_by_first_name }} with your inputs?
+            </p>
+            <form>
+                    <table class = "table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>Hotel</th>
+                            <th>Overall</th>
+                            <th>Location</th>
+                            <th>Facilities</th>
+                            <th>Service</th>
+                            <th>Cleanliness</th>
+                            <th>Remarks</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for hotel in hotels %}
+                        <tr>
+                            <td>{{hotel[1]}}</td>
+                            <td>
+                                <p>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-up"></i>
+                                    </button>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-down"></i>
+                                    </button>
+                                </p>
+                            </td>
+                            <td>
+                                <p>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-up"></i>
+                                    </button>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-down"></i>
+                                    </button>
+                                </p>
+                            </td>
+                            <td>
+                                <p>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-up"></i>
+                                    </button>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-down"></i>
+                                    </button>
+                                </p>
+                            </td>
+                            <td>
+                                <p>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-up"></i>
+                                    </button>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-down"></i>
+                                    </button>
+                                </p>
+                            </td>
+                            <td>
+                                <p>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-up"></i>
+                                    </button>
+                                    <button class="btn btn-small">
+                                        <i class="halflings-icon white thumbs-down"></i>
+                                    </button>
+                                </p>
+                            </td>
+                            <td>
+                                <textarea class="cleditor" rows="3"></textarea>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                <input type="button" value="Save"/>
+            </form>
 
+        </div>
+    </div>
+</div>
 {% endblock %}

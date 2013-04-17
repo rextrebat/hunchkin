@@ -1,0 +1,62 @@
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"
+      xmlns:fb="https://www.facebook.com/2008/fbml"> 
+ <head prefix="og: http://ogp.me/ns#  hk_survey: http://ogp.me/ns/apps/hk_survey#">
+  <meta property="fb:app_id" content="401695513260834" /> 
+  <meta property="og:type"   content="hk_survey:survey" /> 
+  <meta property="og:url"    content="http://hk.jumpingcrab.com:5000/static/fb/survey2.html" /> 
+  <meta property="og:title"  content="Hotels in Negril" /> 
+  <meta property="og:description"  content="Help me choose a hotel in Negril" /> 
+  <meta property="og:image"  content="http://hk.jumpingcrab.com:5000/static/img/logo8.jpeg" /> 
+  <meta property="hk_survey:survey_id" content="survey2" />
+  <script type="text/javascript">
+    function postSurvey()
+    {
+        FB.api(
+          '/me/hk_survey:post',
+          'post',
+          { survey: 'http://hk.jumpingcrab.com:5000/static/fb/survey2.html'},
+          function(response) {
+            if (!response || response.error) {
+                alert('Error occurred');
+            } else {
+                alert('Post was successful! Action ID: ' + response.id);
+            }
+          });
+    }
+    </script>
+</head>
+<body>
+  <div id="fb-root"></div>
+  <script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '401695513260834', // App ID
+        status     : true, // check login status
+        cookie     : true, // enable cookies to allow the server to access the session
+        xfbml      : true  // parse XFBML
+      });
+    };
+
+    // Load the SDK Asynchronously
+    (function(d){
+      var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+      js = d.createElement('script'); js.id = id; js.async = true;
+      js.src = "//connect.facebook.net/en_US/all.js";
+      d.getElementsByTagName('head')[0].appendChild(js);
+    }(document));
+  </script>
+
+  <h3>Hunchkin Survey</h3>
+  <p>
+    KD is planning to visit Negril and is thinking of these hotels. Do you have a recommendation?
+  </p>
+  <p>
+    Survey # 2
+  </p>
+  <br>
+  <form>
+    <input type="button" value="Post" onclick="postSurvey()" />
+  </form>
+</body>
+</html>
+

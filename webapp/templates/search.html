@@ -2,53 +2,61 @@
 {% block page_class %}home-page{% endblock %}
 {% block content %}
 <header class="jumbotron subhead">
-    <div class="row">
-        <div class="span6">
-            <form id="search_form" method="get" action="/search_results_a">
-                <legend>Find the perfect hotel you have in mind</legend>
-                <div id="dest_control" class="ui-widget control-group">
-                    <label class="control-label" for="destination"><strong>Destination</strong></label>
-                    <input class = "input-xxlarge" id="destination" type="text" placeholder="City, Airport Code or area...">
-                    <span id="dest_err" class="help-block"> </span>
-                </div>
-                <label class="control-label"><strong>Dates</strong></label>
-                <div id="travel_dates" class="inline">
-                    <p>
-                    <input type="text" id="date_from" name="date_from" >
-                     To <input type="text" id="date_to" name="date_to">
-                    </p>
-                </div>
+    <div class="row-fluid">
+        <div class="span3"></div>
+        <div class="widget blue span6">
+            <h2>
+                <span class="glyphicons globe">
+                    <i></i>
+                </span>
+                Find the hotel you have in mind with Hunchkin
+            </h2>
+            <hr>
+            <div class="content">
+                <form id="search_form" method="get" action="/search_results_a">
+                    <!-- <legend>Find the perfect hotel you have in mind</legend> -->
+                    <div id="dest_control" class="ui-widget control-group">
+                        <label class="control-label" for="destination"><strong>Destination</strong></label>
+                        <input class = "input-xxlarge" id="destination" type="text" placeholder="City, Airport Code or area...">
+                        <span id="dest_err" class="help-block"> </span>
+                    </div>
+                    <label class="control-label"><strong>Dates</strong></label>
+                    <div id="travel_dates" class="inline">
+                        <input type="text" id="date_from" name="date_from" >
+                        To <input type="text" id="date_to" name="date_to">
+                    </div>
 
-                <div id="hotel_control" class="ui-widget control-group">
-                    <label class="control-label" for="hotel_name"><strong>Name a hotel that you liked in the past</strong></label>
-                    <input class = "input-xxlarge" id="hotel_name" type="text" placeholder="Type the name and city...">
-                    <span id="hotel_err" class="help-block"> </span>
-                </div>
-                <div>
-                    <label class="checkbox inline">
-                        <input id="cb_kids" type="checkbox">Kids in your party?
-                    </label>
-                    <label class="checkbox inline">
-                        <input id="cb_disabled" type="checkbox">Disabled / Senior access?
-                    </label>
-                    <label class="checkbox inline">
-                        <input id="cb_pets" type="checkbox">Pets?
-                    </label>
-                </div>
-                <div>
-                    <p> </p>
-                    <label class="control-label" for="price-range"><strong>Price Range:</strong></label>
-                    <input type="text" id="price-range" style="border: 0; color: #f6931f; font-weight: bold;" />
-                    <div id="price-slider"></div>
-                </div>
-                <div><p> </p></div>
-                <input type="hidden" id="dest_id" name="dest_id">
-                <input type="hidden" id="hotel_id" name="hotel_id">
-                <input type="hidden" id="show_view" name="show_view">
-                <div>
-                    <button id="search" type"submit" class="btn btn-primary"><i class="icon-search"></i> Search</button>
-                </div>
-            </form>
+                    <div id="hotel_control" class="ui-widget control-group">
+                        <label class="control-label" for="hotel_name"><strong>Name a hotel that you liked in the past</strong></label>
+                        <input class = "input-xxlarge" id="hotel_name" type="text" placeholder="Type the name and city...">
+                        <span id="hotel_err" class="help-block"> </span>
+                    </div>
+                    <div>
+                        <label class="checkbox inline">
+                            <input id="cb_kids" type="checkbox">Kids in your party?
+                        </label>
+                        <label class="checkbox inline">
+                            <input id="cb_disabled" type="checkbox">Disabled / Senior access?
+                        </label>
+                        <label class="checkbox inline">
+                            <input id="cb_pets" type="checkbox">Pets?
+                        </label>
+                    </div>
+                    <div>
+                        <p> </p>
+                        <label class="control-label" for="price-range"><strong>Price Range:</strong></label>
+                        <input type="text" id="price-range" style="border: 0; color: #f6931f; font-weight: bold;" />
+                        <div id="price-slider"></div>
+                    </div>
+                    <div><p> </p></div>
+                    <input type="hidden" id="dest_id" name="dest_id">
+                    <input type="hidden" id="hotel_id" name="hotel_id">
+                    <input type="hidden" id="show_view" name="show_view">
+                    <div>
+                        <button id="search" type"submit" class="btn btn-success"><i class="icon-search"></i> Search</button>
+                    </div>
+                </form>
+            </div>
             <!--
             <div>
                 <form name="test_form" method="get" action="/test_form">

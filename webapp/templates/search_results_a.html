@@ -39,11 +39,18 @@
 {% raw %}
   <p> 
   </p>
-<h3>Hunchkin recommends these hotels for you</h3>
-<div class="container-fluid">
+<div class="container-fluid-full">
     <div class="row-fluid">
-        <div id="list_view" class="span9">
+        <div id="list_view" class="box blue span9">
             <!-- List View -->
+            <div class="box-header">
+                <h2>
+                    <i class="halflings-icon fire"></i>
+                    <span class="break"></span>
+                    Hunchkin Recommendations
+                </h2>
+            </div>
+            <div class="box-content">
             <ol id="hotel_selectable" class="ui-selectable">
                 <li class="ui-widget-content" ng-repeat="hotel in selection">
                   <div class="row-fluid">
@@ -89,72 +96,89 @@
                           <li>Full-service health spa</li>
                           <li class="text-error">Parking charges</li>
                       </ul>
-                    <div>
+                    </div>
                   </div>
                 </li>
             </ol>
         </div>
-        <div id="refinement" class="span3 pull-right">
-          <h5>Improve your recommendations. Tell us more about your preferences</h5>
-          <form class="">
-            <table class="table table-condensed">
-              <tr>
-                <td>
-                  <select id="filter_travel_group" name="filter_travel_group" multiple=multiple" class="btn btn-mini">
-                    <option value="kids">Children</option>
-                    <option value="kids">Seniors</option>
-                    <option value="kids">Pets</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <select id="filter_features" name="filter_features" multiple="multiple" class="btn btn-mini" >
-                    <option value="Health_and_Wellness">Health & Wellness</option>
-                    <option value="Recreation">Recreation</option>
-                    <option value="Bath">Bath</option>
-                    <option value="Room_Views">Room Views</option>
-                    <option value="Room_Features">Room Features</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <select id="filter_location" name="filter_location" multiple="multiple" class="btn btn-mini">
-                    <option value="Attractions">Attractions</option>
-                    <option value="Dining">Dining</option>
-                    <option value="Essential Services">Essential Services</option>
-                    <option value="Recreation">Recreation</option>
-                    <option value="Shopping">Shopping</option>
-                    <option value="Nightlife">Nightlife</option>
-                  </select>
-                </td>
-              </tr>
-            </table>
-            <p> </p>
-            <table class="table table-condensed">
-              <tr>
-                <td>Price Range:<input type="text" id="filter_price" style=" border: 0; color: #f6931f;" disabled/></td>
-              </tr>
-              <tr>
-                <td><div priceslider id="price-slider" style="width: 200px; margin: 10px;"></div></td>
-              <tr>
-            </table>
-            
-          </form>
+    </div>
+        <div id="refinement" class="box span3">
+            <div class="box-header">
+                <h2>
+                    <i class="halflings-icon check"></i>
+                    <span class="break"></span>
+                    Refine your search
+                </h2>
+            </div>
+            <div class="box-content">
+                <p><small>Tell us more about your trip and help us give you better recommendations</small></p>
+                <form class="">
+                    <table class="table table-condensed">
+                    <tr>
+                        <td>
+                        <select id="filter_travel_group" name="filter_travel_group" multiple=multiple" class="btn btn-mini">
+                            <option value="kids">Children</option>
+                            <option value="kids">Seniors</option>
+                            <option value="kids">Pets</option>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                        <select id="filter_features" name="filter_features" multiple="multiple" class="btn btn-mini" >
+                            <option value="Health_and_Wellness">Health & Wellness</option>
+                            <option value="Recreation">Recreation</option>
+                            <option value="Bath">Bath</option>
+                            <option value="Room_Views">Room Views</option>
+                            <option value="Room_Features">Room Features</option>
+                        </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                        <select id="filter_location" name="filter_location" multiple="multiple" class="btn btn-mini">
+                            <option value="Attractions">Attractions</option>
+                            <option value="Dining">Dining</option>
+                            <option value="Essential Services">Essential Services</option>
+                            <option value="Recreation">Recreation</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Nightlife">Nightlife</option>
+                        </select>
+                        </td>
+                    </tr>
+                    </table>
+                    <p> </p>
+                    <table class="table table-condensed">
+                    <tr>
+                        <td>Price Range:<input type="text" id="filter_price" style=" border: 0; color: #f6931f;" disabled/></td>
+                    </tr>
+                    <tr>
+                        <td><div priceslider id="price-slider" style="width: 200px; margin: 10px;"></div></td>
+                    <tr>
+                    </table>
+                    
+                </form>
+            </div>
         </div>
-        <div id="survey" class="span3 pull-right">
-          <p><small>Maybe your friends have stayed at these hotels. Ask your friends on Facebook about what they know.</small></p>
-            <button class="btn btn-info btn-block" ng-click="postSurvey()"><i class="icon-facebook-sign icon-2x"></i> Post a poll on Facebook</button>
+        <div id="survey" class="box span3">
+            <div class="box-header">
+                <h2>
+                    <i class="halflings-icon user"></i>
+                    <span class="break"></span>
+                    Ask your friends
+                </h2>
+            </div>
+            <div class="box-content">
+                <p><small>Maybe your friends have stayed at these hotels. Ask your friends on Facebook about what they know.</small></p>
+                <button class="btn btn-info btn-block" ng-click="postSurvey()"><i class="icon-facebook-sign icon-2x"></i> Post a poll on Facebook</button>
+            </div>
         </div>
     </div>
-</div>
 <p> </p>
 <div id="map_canvas" class="span11 pull-left">
 <!-- Map View -->
 </div>
 
-</div>
 
 {% endraw %}
 {% endblock %}

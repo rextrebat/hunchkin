@@ -1,0 +1,73 @@
+/* Hunchkin CSS */
+
+
+/**Search Results**/
+
+#map_canvas {
+    height: 600px;
+    border-style: solid;
+    border-width: 0px;
+    padding: 0px;
+}
+
+#list_view {
+  padding: 0;
+}
+
+
+.hotel-item {
+    background: #99ccff;
+    border-style: solid;
+    border-width: 0px;
+}
+
+#hotel_detail {
+    height: 300px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+#search_options {
+    height: 300px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.hotel-name {
+    height: 40px;
+    margin: 0;
+    padding: 0;
+}
+
+#refinement {
+    border-style:solid;
+    border-width: 1px;
+    padding: 10px;
+  }
+
+#survey {
+    border-style: solid;
+    border-width: 2px;
+    background: #00ccff;
+    padding: 10px;
+  }
+
+
+.ui-selecting { background: #FECA40; }
+.ui-selecting .handle { background: #FECA40; }
+.ui-selected { background: #F39814; color: white; }
+.ui-selected .handle { background: #F39814; color: white; }
+#hotel_selectable { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+#selectable2 { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+
+select.btn-mini {
+  height: auto;
+  line-height: 14px;
+}
+
+select.btn {
+    -webkit-appearance: button;
+       -moz-appearance: button;
+            appearance: button;
+    padding-right: 16px;
+}
