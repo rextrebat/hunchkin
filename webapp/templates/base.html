@@ -118,71 +118,72 @@
     <div class="container-fluid-full">
         {% block content %}{% endblock content %}
     </div>
-        <footer class="footer">
-        <div class='container-fluid-full'>
+    <div class="navbar navbar-fixed-bottom">
+        <hr>
+    <div class='container-fluid-full'>
+        <div class='row'>
+        <div class='span12'>
             <div class='row'>
-            <div class='span12'>
-                <div class='row'>
-                <div class='span4'>
-                    <h4>Product</h4>
-                    <ul class='unstyled'>
-                    <li>
-                        <a href='/'>Home</a>
-                    </li>
-                    <li>
-                        <a href='/why'>Why Hunchkin?</a>
-                    </li>
-                    <li>
-                        <a href='/tour'>FAQ</a>
-                    </li>
-                    </ul>
+            <div class='span2 offset2'>
+                <h4>Product</h4>
+                <ul class='unstyled'>
+                <li>
+                    <a href='/'>Home</a>
+                </li>
+                <li>
+                    <a href='/why'>Why Hunchkin?</a>
+                </li>
+                <li>
+                    <a href='/tour'>FAQ</a>
+                </li>
+                </ul>
 
-                </div>
-                <div class='span4'>
-                    <h4>More</h4>
-                    <ul class='unstyled'>
-                    <li>
-                        <a href='/blog'>Blog</a>
-                    </li>
-                    </ul>
-                </div>
-                <div class='span4'>
+            </div>
+            <div class='span2 offset2'>
+                <h4>More</h4>
+                <ul class='unstyled'>
+                <li>
+                    <a href='/blog'>Blog</a>
+                </li>
+                </ul>
+            </div>
+            <div class='span2 offset2'>
 
-                    <h4>Company</h4>
-                    <ul class='unstyled'>
-                    <li>
-                        <a href='/about'>About</a>
-                    </li>
-                    <li>
-                        <script type='text/javascript'>
-                        //<![CDATA[
-                            { coded = "@.ZHL"
-                            key = "8IQ0LK3zyfjrHuOM1pCSnJYd7khwXVGNRcWqBU9egt5TFAP4EmZsvl6aboi2xD"
-                            shift=coded.length
-                            link=""
-                            for (i=0; i<coded.length; i++) {
-                                if (key.indexOf(coded.charAt(i))==-1) {
-                                ltr = coded.charAt(i)
-                                link += (ltr)
-                                }
-                                else {     
-                                ltr = (key.indexOf(coded.charAt(i))-shift+key.length) % key.length
-                                link += (key.charAt(ltr))
-                                }
+                <h4>Company</h4>
+                <ul class='unstyled'>
+                <li>
+                    <a href='/about'>About</a>
+                </li>
+                <li>
+                    <script type='text/javascript'>
+                    //<![CDATA[
+                        { coded = "@.ZHL"
+                        key = "8IQ0LK3zyfjrHuOM1pCSnJYd7khwXVGNRcWqBU9egt5TFAP4EmZsvl6aboi2xD"
+                        shift=coded.length
+                        link=""
+                        for (i=0; i<coded.length; i++) {
+                            if (key.indexOf(coded.charAt(i))==-1) {
+                            ltr = coded.charAt(i)
+                            link += (ltr)
                             }
-                            document.write("<a href='mailto:"+link+"'>Contact Us</a>")
+                            else {     
+                            ltr = (key.indexOf(coded.charAt(i))-shift+key.length) % key.length
+                            link += (key.charAt(ltr))
                             }
-                        //]]>
-                        </script>
+                        }
+                        document.write("<a href='mailto:"+link+"'>Contact Us</a>")
+                        }
+                    //]]>
+                    </script>
 
-                    </li>
-                    </ul>
-                </div>
-                </div>
+                </li>
+                </ul>
             </div>
             </div>
         </div>
-        </footer>
+        </div>
+    </div>
+    </div>
     
     
     {% block javascript_library %}
