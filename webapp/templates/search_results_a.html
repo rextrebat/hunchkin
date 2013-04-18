@@ -37,9 +37,6 @@
 
 
 {% raw %}
-  <p> 
-  </p>
-<div class="container-fluid-full">
     <div class="row-fluid">
         <div id="list_view" class="box blue span9">
             <!-- List View -->
@@ -47,7 +44,7 @@
                 <h2>
                     <i class="halflings-icon fire"></i>
                     <span class="break"></span>
-                    Hunchkin Recommendations
+                    <strong>Hunchkin Recommendations</strong>
                 </h2>
             </div>
             <div class="box-content">
@@ -107,11 +104,56 @@
                 <h2>
                     <i class="halflings-icon check"></i>
                     <span class="break"></span>
-                    Refine your search
+                    <strong>Refine your search</strong>
                 </h2>
             </div>
             <div class="box-content">
-                <p><small>Tell us more about your trip and help us give you better recommendations</small></p>
+                <span class="label label-info"><small>Does your party have?</small></span>
+                <div>
+                        <label class="checkbox inline">
+                            <input id="cb_kids" type="checkbox" checked>Kids
+                        </label>
+                        <label class="checkbox inline">
+                            <input id="cb_disabled" type="checkbox">Seniors/Disabled
+                        </label>
+                        <label class="checkbox inline">
+                            <input id="cb_pets" type="checkbox">Pets
+                        </label>
+                </div>
+                <hr>
+                <span class="label label-info"><small>Price Range: </span><input type="text" class="input-small" id="filter_price" disabled/>
+                <div priceslider id="price-slider" style="width: 200px; "></div>
+                <hr>
+                <span class="label label-info"><small>Things you care about</small></span>
+                <div class="row-fluid">
+                    <div class="span6">
+                        <h5>Hotel Features</h5>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.bar"><small> Bar</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.breakfast"><small> Breakfast, Coffee etc.</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.Dining"><small> Dining</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.business_amenities"><small> Business Amenities</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.kids_facilities"><small> Kids Facilities</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.pool"><small> Swimming Pool</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="features.sports"><small> Sports facilities</small></label>
+                        <h5>Room</h5>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="rooms.bed_bath"><small> Bed and bath</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="rooms.internet"><small> Internet</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="rooms.entertainment"><small> In Room Entertainment</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="rooms.kitchen"><small> In Room Kitchen Applicances</small></label>
+                    </div>
+                    <div class="span6">
+                        <h5>Proximity to</h5>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.attractions"><small> Local Attractions</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.bars_restaurants"><small> Bars and Restaurants</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.essential_services"><small> Essential Services</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.nightlife"><small> Nightlife</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.recreation"><small> Recreation</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.shopping"><small> Shopping</small></label>
+                        <label class="checkbox"><input checked="checked" type="checkbox" value="location.transportation"><small> Local Transportation</small></label>
+                    </div>
+                </div>
+
+                <!--
                 <form class="">
                     <table class="table table-condensed">
                     <tr>
@@ -158,9 +200,36 @@
                     </table>
                     
                 </form>
+                -->
             </div>
         </div>
-        <div id="survey" class="box span3">
+    </div>
+    <div class="row-fluid">
+        <div id="survey" class="box span4">
+            <div class="box-header">
+                <h2>
+                    <i class="halflings-icon th"></i>
+                    <span class="break"></span>
+                    Side-by-side comparison
+                </h2>
+            </div>
+            <div class="box-content">
+                <p><small>See a detailed comparison of these hotels</small></p>
+            </div>
+        </div>
+        <div id="survey" class="box span4">
+            <div class="box-header">
+                <h2>
+                    <i class="halflings-icon globe"></i>
+                    <span class="break"></span>
+                    Map view
+                </h2>
+            </div>
+            <div class="box-content">
+                <p><small>See these hotels on the map</small></p>
+            </div>
+        </div>
+        <div id="survey" class="box span4">
             <div class="box-header">
                 <h2>
                     <i class="halflings-icon user"></i>
@@ -169,15 +238,18 @@
                 </h2>
             </div>
             <div class="box-content">
-                <p><small>Maybe your friends have stayed at these hotels. Ask your friends on Facebook about what they know.</small></p>
+                <p><small>Maybe your friends have stayed at these hotels. Ask your friends for suggestions.</small></p>
                 <button class="btn btn-info btn-block" ng-click="postSurvey()"><i class="icon-facebook-sign icon-2x"></i> Post a poll on Facebook</button>
             </div>
         </div>
     </div>
-<p> </p>
+<!--
 <div id="map_canvas" class="span11 pull-left">
 <!-- Map View -->
 </div>
+-->
+
+</div> <!-- ng-controller -->
 
 
 {% endraw %}
