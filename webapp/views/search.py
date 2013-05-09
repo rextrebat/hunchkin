@@ -296,6 +296,20 @@ def get_initial_price_limit(ref_hotel_id, region_id):
     return numpy.percentile(search_rates, ref_pc) * price_limit_mult
 
 
+def get_region_name(region_id):
+    """
+    Return region name given region_id
+    """
+    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor.execute(
+            """
+            SELECT RegionName
+            FROM EAN_Regions
+            WHERE RegionID = %s
+            """, region_id)
+    return cursor.fetchone()['RegionName'].decode('utf-8', 'ignore')
+
+
 def get_result_template(show_view):
     """
     return template
@@ -389,12 +403,16 @@ def handle_search_a():
     base_hotel_id = int(request.args.get("hotel_id"))
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
+    base_hotel_name = get_hotel_name(base_hotel_id)
+    region_name = get_region_name(region_id)
     return render_template(
             "search_results_a.html",
             region_id=region_id,
             base_hotel_id=base_hotel_id,
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            base_hotel_name=base_hotel_name,
+            region_name=region_name,
             )
 
 
