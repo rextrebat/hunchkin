@@ -19,13 +19,15 @@ from flask.ext.security import Security
 #from flask.ext.social import Social
 from flask.ext.security import SQLAlchemyUserDatastore
 #from flask.ext.social.datastore import SQLAlchemyConnectionDatastore
+from flask.ext.admin import Admin
+from flask.ext.admin.contrib.sqla import ModelView
 
 from beaker.middleware import SessionMiddleware
 
 from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
-from webapp.views import search, browse_genome, frontend, social
-from webapp.models import User, Role, Connection
+from webapp.views import search, browse_genome, frontend, social, GenomeRuleView
+from webapp.models import User, Role, Connection, GenomeRule, GenomeCategory
 from webapp.extensions import db, mail, cache, login_manager
 
 # For import *
@@ -102,6 +104,10 @@ def configure_extensions(app):
 # security and Social
     app.flask_security = Security(app, SQLAlchemyUserDatastore(db, User, Role))
     #app.flask_social = Social(app, SQLAlchemyConnectionDatastore(db, Connection))
+# admin
+    admin = Admin(app)
+    #admin.add_view(ModelView(GenomeRule, db.session))
+    admin.add_view(GenomeRuleView(db.session, name="Genome Rules"))
 
 # Configure logging
 

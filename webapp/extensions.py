@@ -16,6 +16,7 @@ from flask_oauth import OAuth
 from webapp.config import DefaultConfig
 oauth = OAuth()
 
+
 #facebook = oauth.remote_app('facebook',
     #base_url='https://graph.facebook.com/',
     #request_token_url=None,
