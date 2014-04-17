@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Google Places - Get Nearby Places"""
+"""Foursquare - Get Nearby Places"""
 
 __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
@@ -16,7 +16,7 @@ import urlparse
 import crawl_helper
 
 
-logger = logging.getLogger('ean_hotel_desc')
+logger = logging.getLogger('foursquare_places')
 
 # -- globals
 conn = pymongo.Connection("localhost", 27017)
@@ -29,14 +29,13 @@ dbconn = MySQLdb.Connection(
 db = conn.hotelgenome
 
 throttler1 = crawl_helper.Throttler(5, 1)
-throttler2 = crawl_helper.Throttler(2000, 3600)
+throttler2 = crawl_helper.Throttler(5000, 3600)
 
-base_url = "http://places.cit.api.here.com/places/v1/discover/explore"
+base_url = "https://api.foursquare.com/v2/venues/explore"
 
 base_params = {
-        "app_id": "txuyFL-drAd4lXn3WOjJ",
-        "app_code": "s6nJMZIO26OHLeUA3BoDQA",
-        "tf": "plain",
+        "client_id": "Z2Q5CXUGN0BHXON2EC4PFT2ZF3DHY4ZHXT0XOP3FZTDZMYOC",
+        "client_secret": "QGB4LUGNOZATFOBLQXX5CL3RFPKOGV4T3JLTDBHKSGHGWQ3B",
         }
 
 config_places = crawl_helper.FetcherConfig(
