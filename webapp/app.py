@@ -26,7 +26,7 @@ from beaker.middleware import SessionMiddleware
 
 from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
-from webapp.views import search, browse_genome, frontend, social, GenomeRuleView
+from webapp.views import search, browse_genome, frontend, social, GenomeRuleView, GenomeCategoryView
 from webapp.models import User, Role, Connection, GenomeRule, GenomeCategory
 from webapp.extensions import db, mail, cache, login_manager
 
@@ -108,6 +108,7 @@ def configure_extensions(app):
     admin = Admin(app)
     #admin.add_view(ModelView(GenomeRule, db.session))
     admin.add_view(GenomeRuleView(db.session, name="Genome Rules"))
+    admin.add_view(GenomeCategoryView(db.session, name="Genome Categories"))
 
 # Configure logging
 

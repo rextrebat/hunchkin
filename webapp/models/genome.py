@@ -13,14 +13,16 @@ class GenomeRule(db.Model):
 
     __tablename__ = "genome_rules"
 
+    gr_id = db.Column(db.Integer, primary_key=True)
     category = db.Column(db.String(64))
     sub_category = db.Column(db.String(64))
     gene_name = db.Column(db.String(128))
     gene_code = db.Column(db.String(128))
-    bitmask = db.Column(db.Integer, primary_key=True)
+    bitmask = db.Column(db.Integer)
     function = db.Column(db.String(64))
     parameters = db.Column(db.String(256))
     chromosome = db.Column(db.String(64))
+    chromosome_id = db.Column(db.Integer)
     gene_usage = db.Column(db.String(32))
     weight = db.Column(db.Integer)
     gene_source = db.Column(db.String(64))
