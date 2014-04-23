@@ -156,10 +156,9 @@ def save_hotel_chromosome_score(h):
     """
     cursor = conn.cursor()
     scores = get_chromosome_score(h)
-    logger.debug("Hotel Id: %d" % h.hotel_id)
     cursor.executemany(
             """
-            INSERT INTO hotel_chromosome
+            INSERT INTO new_hotel_chromosome
             (hotel_id, chromosome_id,
             raw_score, normalized_score)
             VALUES
@@ -177,7 +176,7 @@ def load_hotels(selection=None):
     cursor = conn.cursor()
     query = """
     SELECT hotel_id, genome
-    FROM hotel_genome
+    FROM new_hotel_genome
     """
     if selection:
         selection = [str(s) for s in selection]
@@ -219,8 +218,9 @@ if __name__ == '__main__':
     load_hotels()
 
     logger.info("[3] Tagging hotel chromosomes")
-    for h in hotels:
+    for i, h in enumerate(hotels):
         save_hotel_chromosome_score(h)
+        logger.debug("[%s] Hotel Id: %d" % (i, h.hotel_id))
 
     logger.info("[4] Done tagging")
     conn.commit()

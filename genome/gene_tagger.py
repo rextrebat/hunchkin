@@ -18,6 +18,8 @@ logger = logging.getLogger("gene_tagger")
 
 conn = None
 
+conn_ean = None
+
 conn_mongo = None
 
 GENOME_LENGTH = 512
@@ -82,7 +84,7 @@ class GF_LocCat(GeneFunctionBase):
     def get_gene_value(self, field, gene_rule):
         cat, dist = gene_rule.param.split(",")
         for lc in field:
-            if cat.strip() == lc.category and int(dist) == lc.distance:
+            if cat.strip() == lc.category and float(dist) == lc.distance:
                 return lc.count
         return 0
 
@@ -161,39 +163,40 @@ def load_hotels(selection=None):
     """
     Load all hotels in DB otherwise only selection
     """
-    cursor = conn.cursor()
+    cursor_hk = conn.cursor()
+    cursor_ean = conn_ean.cursor()
     query = """
     SELECT EANHotelID, StarRating
-    FROM EAN_ActiveProperties
+    FROM activepropertylist
     """
     if selection:
         selection = [str(s) for s in selection]
         query += """
         WHERE EANHotelID in (%s)
         """ % ",".join(selection)
-    cursor.execute(query)
-    rows = cursor.fetchall()
+    cursor_ean.execute(query)
+    rows = cursor_ean.fetchall()
     for r in rows:
         hotel_id = r[0]
         basic = dict(itertools.izip(
             ["EANHotelID", "StarRating"],r))
-        cursor.execute(
+        cursor_ean.execute(
                 """
                 SELECT AttributeID, AppendTxt
-                FROM EAN_PropertyAttributeLink
+                FROM propertyattributelink
                 WHERE EANHotelID = %s
                 """ % (hotel_id)
                 )
-        am_rows = cursor.fetchall()
+        am_rows = cursor_ean.fetchall()
         amenities = dict(am_rows)
-        cursor.execute(
+        cursor_hk.execute(
                 """
                 SELECT category, distance, count
                 FROM loc_categories
                 WHERE hotel_id = %s
                 """ % (hotel_id)
                 )
-        lc_rows = cursor.fetchall()
+        lc_rows = cursor_hk.fetchall()
         loc_cat = [LocCat(lc[0], lc[1], lc[2]) for lc in lc_rows]
         hotels.append(
                 Hotel(
@@ -213,10 +216,8 @@ def save_hotel_genome(h, gene_rules):
     genome = h.get_genome(gene_rules)
     genome = [str(g) for g in genome]
     genome = ','.join(genome)
-    logger.debug("genome for h_id %s: %s" % (
-        h.hotel_id, genome))
     query = """
-            INSERT INTO hotel_genome
+            INSERT INTO new_hotel_genome
             (hotel_id, genome)
             VALUES
             (%s, '%s')
@@ -225,6 +226,7 @@ def save_hotel_genome(h, gene_rules):
             """ % (h.hotel_id, genome, genome)
     cursor.execute(query)
     cursor.close()
+    return genome
 
 
 if __name__ == '__main__':
@@ -238,16 +240,26 @@ if __name__ == '__main__':
         db="hotel_genome"
     )
 
+    conn_ean = MySQLdb.Connection(
+        host="localhost",
+        user="eanuser",
+        passwd="ean!BogolTola",
+        db="eanprod"
+    )
+
     logger.info("[1] Loading genome rules")
     load_genome_rules()
 
     logger.info("[2] Loading hotels data")
-    # selection = [228014,125813,188071,111189,212448]
+    #selection = [228014,125813,188071,111189,212448]
+    #load_hotels(selection)
     load_hotels()
 
     logger.info("[3] Tagging hotel genes")
-    for h in hotels:
-        save_hotel_genome(h, HotelGenome)
+    for i, h in enumerate(hotels):
+        genome = save_hotel_genome(h, HotelGenome)
+        logger.debug("[%s] genome for h_id %s: %s" % (
+            i+1, h.hotel_id, genome))
 
     logger.info("[4] Done tagging")
     conn.commit()
