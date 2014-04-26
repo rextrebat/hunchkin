@@ -61,22 +61,22 @@ class Survey():
         self.fetch_hotel_names(r['hotel_ids'])
 
     def fetch_region_name(self):
-        cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+        cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
         cursor.execute(
                 """
                 SELECT RegionName
-                FROM EAN_Regions
+                FROM parentregionlist
                 WHERE RegionID = %s
                 """, self.region_id)
         r = cursor.fetchone()
         self.region_name = r['RegionName']
 
     def fetch_hotel_names(self, ids):
-        cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+        cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
         cursor.execute(
                 """
                 SELECT EANHotelID, Name
-                FROM EAN_ActiveProperties
+                FROM activepropertylist
                 WHERE EANHotelID IN (%s)
                 """ % (ids))
         rows = cursor.fetchall()

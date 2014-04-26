@@ -28,7 +28,7 @@ from webapp import utils
 from webapp.config import DefaultConfig, APP_NAME
 from webapp.views import search, browse_genome, frontend, social, GenomeRuleView, GenomeCategoryView
 from webapp.models import User, Role, Connection, GenomeRule, GenomeCategory
-from webapp.extensions import db, mail, cache, login_manager
+from webapp.extensions import db, db_ean, mail, cache, login_manager
 
 # For import *
 __all__ = ['create_app']
@@ -88,6 +88,7 @@ def configure_extensions(app):
 # configure extensions
 # sqlalchemy
     db.init_app(app)
+    db_ean.init_app(app)
 # mail
     mail.init_app(app)
 # cache
@@ -179,6 +180,14 @@ def configure_hook(app):
                 passwd=app.config['PASSWORD']
                 )
 
+    def connect_db_ean():
+        return MySQLdb.Connection(
+                host=app.config['EAN_HOST'],
+                db=app.config['EAN_DB'],
+                user=app.config['EAN_USERNAME'],
+                passwd=app.config['EAN_PASSWORD']
+                )
+
     def connect_mongo():
         return pymongo.Connection(host=app.config['HOST'])
 
@@ -189,6 +198,7 @@ def configure_hook(app):
     @app.before_request
     def before_request():
         g.db = connect_db()
+        g.db_ean = connect_db_ean()
         g.mongo = connect_mongo()
         g.mc = connect_memcached()
 
@@ -197,6 +207,8 @@ def configure_hook(app):
     def teardown_request(exception):
         if hasattr(g, 'db'):
             g.db.close()
+        if hasattr(g, 'db_ean'):
+            g.db_ean.close()
 
 
 def configure_error_handlers(app):

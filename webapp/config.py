@@ -57,6 +57,11 @@ class DevConfig(BaseConfig):
     PASSWORD = "rextrebat"
     DB = "hotel_genome"
 
+    EAN_HOST="localhost"
+    EAN_USERNAME = "eanuser"
+    EAN_PASSWORD = "ean!BogolTola"
+    EAN_DB = "eanprod"
+
     SOCIAL_FACEBOOK = {
             'consumer_key': '401915129878375',
             'consumer_secret': '087ada986d6c5a54e98ac7d28416b3c5',
@@ -103,6 +108,11 @@ class ProdConfig(BaseConfig):
     USERNAME = "appuser"
     PASSWORD = "rextrebat"
     DB = "hotel_genome"
+
+    EAN_HOST="localhost"
+    EAN_USERNAME = "eanuser"
+    EAN_PASSWORD = "ean!BogolTola"
+    EAN_DB = "eanprod"
 
     SOCIAL_FACEBOOK = {
             'consumer_key': '401915129878375',

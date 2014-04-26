@@ -2,6 +2,7 @@
 
 from flask.ext.sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
+db_ean = SQLAlchemy()
 
 from flask.ext.mail import Mail
 mail = Mail()

@@ -26,7 +26,7 @@ hotels = None
 # celery.config_from_object(CeleryConfig)
 
 
-avail_base_url = "http://api.ean.com/ean-services/rs/hotel/v3/list"
+avail_base_url = "http://dev.api.ean.com/ean-services/rs/hotel/v3/list"
 
 
 @celery.task
@@ -35,7 +35,7 @@ def get_avail_hotels(date_from, date_to, hotel_ids):
     return hotels with availability
     """
     base_params = {
-            "minorRev": 16,
+            "minorRev": 26,
             "apiKey": "5rrrsn5skrcjbhcpggvek38u",
             "cid": "55505",
             "customerUserAgent": "None",

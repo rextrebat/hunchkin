@@ -80,15 +80,15 @@ def search_get_hotels(region_id):
     key = "hotels_in_region_" + str(region_id)
     hotels_in_region = mc.get(key)
     if not hotels_in_region:
-        cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+        cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
         cursor.execute(
                 """
                     SELECT rp.EANHotelID, p.Name, p.StarRating,
                     i.ThumbnailURL, p.Latitude, p.Longitude, p.LowRate
-                    FROM EAN_RegionPropertyMapping rp
-                    JOIN EAN_ActiveProperties p
+                    FROM regioneanhotelidmapping rp
+                    JOIN activepropertylist p
                     ON rp.EANHotelID = p.EANHotelID
-                    LEFT OUTER JOIN EAN_HotelImages i
+                    LEFT OUTER JOIN hotelimagelist i
                     ON rp.EANHotelID = i.EANHotelID
                     AND i.DefaultImage = 1
                     WHERE rp.RegionID = "%s"
@@ -231,11 +231,11 @@ def get_hotel_name(hotel_id):
     """
     return hotel_name given id
     """
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
             SELECT Name
-            FROM EAN_ActiveProperties
+            FROM activepropertylist
             WHERE EANHotelID = %s
             """, hotel_id
             )
@@ -246,11 +246,11 @@ def get_region_lat_long(region_id):
     """
     Return center of region given region_id
     """
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
             SELECT CenterLatitude, CenterLongitude
-            FROM EAN_RegionCenterCoordinates
+            FROM regioncentercoordinateslist
             WHERE RegionID = %s
             """, region_id)
     r = cursor.fetchone()
@@ -268,11 +268,11 @@ def get_initial_price_limit(ref_hotel_id, region_id):
     2. Determine what is the equivalent percentile rate in the search region
     3. Add 100% (configurable) to that
     """
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
             SELECT b.LowRate
-            FROM EAN_ActiveProperties a, EAN_ActiveProperties b
+            FROM activepropertylist a, activepropertylist b
             WHERE a.RegionID = b.RegionID
             AND a.EANHotelID = %s
             """, ref_hotel_id)
@@ -280,7 +280,7 @@ def get_initial_price_limit(ref_hotel_id, region_id):
     cursor.execute(
             """
             SELECT LowRate
-            FROM EAN_ActiveProperties
+            FROM activepropertylist
             WHERE EANHotelID = %s
             """, ref_hotel_id)
     ref_hotel_low_rate = cursor.fetchone()['LowRate']
@@ -288,11 +288,13 @@ def get_initial_price_limit(ref_hotel_id, region_id):
     cursor.execute(
             """
             SELECT LowRate
-            FROM EAN_ActiveProperties
+            FROM activepropertylist
             WHERE RegionID = %s
             """, region_id)
     search_rates = [float(r['LowRate']) for r in cursor.fetchall()]
     price_limit_mult = 2.0
+    logger.debug("search_rates length: %s" % str(len(search_rates)))
+    logger.debug("ref_pc: %s" % str(ref_pc))
     return numpy.percentile(search_rates, ref_pc) * price_limit_mult
 
 
@@ -300,11 +302,11 @@ def get_region_name(region_id):
     """
     Return region name given region_id
     """
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
             SELECT RegionName
-            FROM EAN_Regions
+            FROM parentregionlist
             WHERE RegionID = %s
             """, region_id)
     return cursor.fetchone()['RegionName'].decode('utf-8', 'ignore')
@@ -505,11 +507,11 @@ def handle_search_c():
     base_hotel_id = int(request.args.get("hotel_id"))
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
             SELECT rp.EANHotelID 
-            FROM EAN_RegionPropertyMapping rp, EAN_ActiveProperties p
+            FROM regioneanhotelidmapping rp, activepropertylist p
             WHERE p.EANHotelID = rp.EANHotelID
             AND rp.RegionID = "%s"
             """, region_id
@@ -579,8 +581,8 @@ def handle_search_c():
                 """
                 SELECT p.EANHotelID, p.Name, p.StarRating, i.ThumbnailURL,
                 p.Latitude, p.Longitude
-                FROM EAN_ActiveProperties p
-                LEFT OUTER JOIN EAN_HotelImages i
+                FROM activepropertylist p
+                LEFT OUTER JOIN hotelimagelist i
                 ON p.EANHotelID = i.EANHotelID
                 AND i.DefaultImage = 1
                 WHERE p.EANHotelID in (%s)
@@ -610,7 +612,7 @@ def handle_search_c():
         cursor.execute(
                 """
                 SELECT Name
-                FROM EAN_ActiveProperties
+                FROM activepropertylist
                 WHERE EANHotelID = %s
                 """, base_hotel_id
                 )
@@ -619,7 +621,7 @@ def handle_search_c():
         cursor.execute(
                 """
                 SELECT CenterLatitude, CenterLongitude
-                FROM EAN_RegionCenterCoordinates
+                FROM regioncentercoordinateslist
                 WHERE RegionID = %s
                 """, region_id)
         r = cursor.fetchone()

@@ -227,16 +227,16 @@ def hotel_loc():
 @browse_genome.route('/ean_data')
 def ean_data():
     h_id = int(request.args.get("h_id"))
-    cursor = g.db.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
             """
-            SELECT * FROM EAN_ActiveProperties
+            SELECT * FROM activepropertylist
             WHERE EANHotelID = %s
             """, h_id)
     prop_basic = cursor.fetchone()
     cursor.execute(
             """
-            SELECT * FROM EAN_AreaAttractions
+            SELECT * FROM areaattractionslist
             WHERE EANHotelID = %s
             """, h_id)
     area_attractions = cursor.fetchone()
@@ -245,7 +245,7 @@ def ean_data():
                 area_attractions["AreaAttractions"], "utf8")
     cursor.execute(
             """
-            SELECT * FROM EAN_DiningDescriptions
+            SELECT * FROM diningdescriptionlist
             WHERE EANHotelID = %s
             """, h_id)
     dining_desc = cursor.fetchone()
@@ -254,7 +254,7 @@ def ean_data():
                 dining_desc["DiningDescription"], "utf8")
     cursor.execute(
             """
-            SELECT * FROM EAN_PolicyDescriptions
+            SELECT * FROM policydescriptionlist
             WHERE EANHotelID = %s
             """, h_id)
     policy_desc = cursor.fetchone()
@@ -263,7 +263,7 @@ def ean_data():
                 policy_desc["PolicyDescription"], "utf8")
     cursor.execute(
             """
-            SELECT * FROM EAN_PropertyDescriptions
+            SELECT * FROM propertydescriptionlist
             WHERE EANHotelID = %s
             """, h_id)
     prop_desc = cursor.fetchone()
@@ -272,7 +272,7 @@ def ean_data():
                 prop_desc["PropertyDescription"], "utf8")
     cursor.execute(
             """
-            SELECT * FROM EAN_RoomTypes
+            SELECT * FROM roomtypelist
             WHERE EANHotelID = %s
             """, h_id)
     room_types = cursor.fetchall()
@@ -281,7 +281,7 @@ def ean_data():
                 r["RoomTypeDescription"], "utf8")
     cursor.execute(
             """
-            SELECT * FROM EAN_SpaDescriptions
+            SELECT * FROM spadescriptionlist
             WHERE EANHotelID = %s
             """, h_id)
     spa_desc = cursor.fetchone()
@@ -291,7 +291,7 @@ def ean_data():
     cursor.execute(
             """
             SELECT AttributeDesc, Type, SubType
-            FROM EAN_Attributes a, EAN_PropertyAttributeLink l
+            FROM attributelist a, propertyattributelink l
             WHERE a.AttributeID = l.AttributeID
             AND EANHotelID = %s
             ORDER BY Type, SubType
@@ -302,7 +302,7 @@ def ean_data():
     cursor.execute(
             """
             SELECT AttributeDesc, Type, SubType
-            FROM EAN_GDSAttributes a, EAN_GDSPropertyAttributeLink l
+            FROM gdsattributelist a, gdspropertyattributelink l
             WHERE a.AttributeID = l.AttributeID
             AND EANHotelID = %s
             ORDER BY Type, SubType
