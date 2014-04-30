@@ -287,9 +287,11 @@ def get_initial_price_limit(ref_hotel_id, region_id):
     ref_pc = scipy.stats.percentileofscore(ref_rates,ref_hotel_low_rate)
     cursor.execute(
             """
-            SELECT LowRate
-            FROM activepropertylist
-            WHERE RegionID = %s
+            SELECT p.LowRate
+            FROM regioneanhotelidmapping rp
+            JOIN activepropertylist p
+            ON rp.EANHotelID = p.EANHotelID
+            WHERE rp.RegionID = %s
             """, region_id)
     search_rates = [float(r['LowRate']) for r in cursor.fetchall()]
     price_limit_mult = 2.0
