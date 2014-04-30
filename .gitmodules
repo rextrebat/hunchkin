@@ -1,3 +1,4 @@
 [submodule "ean-pc-dbscripts"]
 	path = ean-pc-dbscripts
 	url = https://github.com/ExpediaInc/ean-pc-dbscripts.git
+    ignore=dirty

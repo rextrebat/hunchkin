@@ -66,7 +66,7 @@ def get_gene_values():
     sub_category = request.args.get("sub_category").strip()
     result = genome_distance.get_gene_values.delay(
             base_hotel_id, comp_hotel_id, category, sub_category)
-    gene_values = result.get(timeout=5)
+    gene_values = result.get(timeout=10)
     return render_template('gene_values.html', 
             gene_values=gene_values)
 
@@ -126,7 +126,7 @@ def search_post_hotel_distances(base_hotel_id, comp_hotels):
 
 
 def search_get_hotel_distances(dist_handle):
-    similar_hotels = dist_handle.get(timeout=10)
+    similar_hotels = dist_handle.get(timeout=30)
     return similar_hotels
 #TODO: parameterize timeout
 
@@ -156,7 +156,7 @@ def search_post_avail(date_from, date_to, similar_hotel_ids):
 
 
 def search_get_avail(avail_handle):
-    hotel_avail = avail_handle.get(timeout=10)
+    hotel_avail = avail_handle.get(timeout=20)
 #TODO: parameterize timeout
     return hotel_avail
 
@@ -538,7 +538,7 @@ def handle_search_c():
                 comp_hotels,
                 5
                 ), queue="distance")
-        similar_hotels = result.get(timeout=10)
+        similar_hotels = result.get(timeout=30)
         similar_hotel_ids = [s[0] for s in similar_hotels]
         result2 = ean_tasks.get_avail_hotels.apply_async((
                 date_from,
@@ -598,7 +598,7 @@ def handle_search_c():
                     'ThumbnailURL']
             hotel_dict[r['EANHotelID']]['Latitude'] = r['Latitude']
             hotel_dict[r['EANHotelID']]['Longitude'] = r['Longitude']
-        hotel_avail = result2.get(timeout=10)
+        hotel_avail = result2.get(timeout=20)
         for k, v in hotel_avail.iteritems():
             hotel_dict[k] = dict(hotel_dict[k].items() + v.items())
         hotel_recos = hotel_dict.values()
@@ -662,7 +662,7 @@ def hotel_compare():
     similar_hotel_ids = [s[0] for s in similar_hotels]
     result = chromosome_distance.get_gene_values.apply_async(args=[
             similar_hotel_ids], queue="distance")
-    subcats, hotel_genes = result.get(timeout=10)
+    subcats, hotel_genes = result.get(timeout=20)
     hotel_dict = session['hotel_info']
     return render_template(
             "subcat_gene_values.html",
