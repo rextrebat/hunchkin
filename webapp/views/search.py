@@ -6,7 +6,7 @@ __author__ = "Kingshuk Dasgupta (rextrebat/kdasgupta)"
 __version__ = "0.0pre0"
 
 import logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
 
 logger = logging.getLogger("search")
 
@@ -18,6 +18,7 @@ import urllib2
 import urllib
 import numpy
 import scipy.stats
+import bisect
 import genome.genome_distance as genome_distance
 import genome.chromosome_distance as chromosome_distance
 import avail.ean_tasks as ean_tasks
@@ -74,7 +75,8 @@ def get_gene_values():
 
 def search_get_hotels(region_id):
     """
-    get all the hotels for this region_id and cache it if not in cache
+    get all the hotels for this region_id 
+    and cache it if not in cache
     """
     mc = g.mc
     key = "hotels_in_region_" + str(region_id)
@@ -101,6 +103,34 @@ def search_get_hotels(region_id):
         mc.set(key, hotels_in_region, 7200)
 #TODO: parameterize expiration
     return hotels_in_region
+
+
+def search_consideration_set(all_hotels, ref_hotel_id):
+    """
+    create consideration set of hotels based ON
+    price percentile of reference hotel
+    20 items on either side of percentile point
+    """
+#TODO: Magic to be fixed
+    NUM_HOTELS = 40
+    ref_pc = get_ref_hotel_price_percentile(ref_hotel_id)
+    hotels_and_rates = sorted(
+            [(k, v["LowRate"]) for k, v in all_hotels.iteritems()],
+            key = lambda h: h[1])
+    rates = [h_lowrate for (h_id, h_lowrate) in hotels_and_rates]
+    rate_percentiles = [
+            scipy.stats.percentileofscore(rates, h_lowrate)
+            for h_lowrate in rates]
+    pos = bisect.bisect(rate_percentiles, ref_pc)
+    consideration_set = Set()
+    l = len(hotels_and_rates)
+    for i in range(0 if pos - NUM_HOTELS/2 < 0 else pos - NUM_HOTELS/2, pos):
+        consideration_set.add(hotels_and_rates[i][0])
+    for i in range(pos, l if pos + NUM_HOTELS/2 > l else pos + NUM_HOTELS/2):
+        consideration_set.add(hotels_and_rates[i][0])
+    logger.debug("Consideration Set: %s" % str(len(consideration_set)))
+    return consideration_set
+
 
 
 def search_get_similarities(region_id, base_hotel_id, comp_hotels):
@@ -261,12 +291,10 @@ def get_region_lat_long(region_id):
     return r_lat, r_long
 
 
-def get_initial_price_limit(ref_hotel_id, region_id):
+def get_ref_hotel_price_percentile(ref_hotel_id):
     """
-    Find the initial price limit:
-    1. Find percentile score of price of ref_hotel_id in its region
-    2. Determine what is the equivalent percentile rate in the search region
-    3. Add 100% (configurable) to that
+    Return the percentile score of the price of the ref hotel
+    in its region
     """
     cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
     cursor.execute(
@@ -284,7 +312,18 @@ def get_initial_price_limit(ref_hotel_id, region_id):
             WHERE EANHotelID = %s
             """, ref_hotel_id)
     ref_hotel_low_rate = cursor.fetchone()['LowRate']
-    ref_pc = scipy.stats.percentileofscore(ref_rates,ref_hotel_low_rate)
+    return scipy.stats.percentileofscore(ref_rates,ref_hotel_low_rate)
+
+
+def get_initial_price_limit(ref_hotel_id, region_id):
+    """
+    Find the initial price limit:
+    1. Find percentile score of price of ref_hotel_id in its region
+    2. Determine what is the equivalent percentile rate in the search region
+    3. Add 100% (configurable) to that
+    """
+    cursor = g.db_ean.cursor(cursorclass=MySQLdb.cursors.DictCursor)
+    ref_pc = get_ref_hotel_price_percentile(ref_hotel_id)
     cursor.execute(
             """
             SELECT p.LowRate
@@ -294,6 +333,7 @@ def get_initial_price_limit(ref_hotel_id, region_id):
             WHERE rp.RegionID = %s
             """, region_id)
     search_rates = [float(r['LowRate']) for r in cursor.fetchall()]
+# TODO: Parameterize the following:
     price_limit_mult = 2.0
     logger.debug("search_rates length: %s" % str(len(search_rates)))
     logger.debug("ref_pc: %s" % str(ref_pc))
@@ -432,22 +472,24 @@ def handle_search_a_ctrl():
 
 #2. Get candidate hotels
     all_hotels = search_get_hotels(region_id)
-    all_hotel_ids = [int(h) for h in all_hotels.iterkeys()]
 #TODO: bail out if too few or too many hotels
 
-#3. Post similarities request
+
+#3. Narrow consideration set based on price percentile of ref hotel
+    consideration_set = search_consideration_set(all_hotels, base_hotel_id)
+
+#4. Post similarities request
     similarities = search_get_similarities(
             region_id,
             base_hotel_id,
-            all_hotel_ids
+            consideration_set
             )
 
-#4. Prepare Selection
-    selected_hotel_ids = Set(all_hotel_ids)
+#5. Prepare Selection
     recommendations = search_prepare_selection(
             all_hotels,
             similarities,
-            selected_hotel_ids,
+            consideration_set,
             200
             )
 #TODO: parameterize number in selection
