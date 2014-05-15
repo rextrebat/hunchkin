@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html ng-app="hunchkin" xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"
+      xmlns:fb="https://www.facebook.com/2008/fbml"> 
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+	  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hunchkin</title>
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <link rel="stylesheet" href="bootstrap3/css/bootstrap-yeti.min.css"/>
+    <link rel="stylesheet" href="bootstrap3/css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="static2/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="static2/css/hkfooter.css"/>
+    <link rel="stylesheet" href="bootstrap-multiselect/css/bootstrap-multiselect.css"/>
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css"/>
+	  <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800&subset=latin,cyrillic-ext,latin-ext' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="galleria/themes/classic/galleria.classic.css"/>
+    
+</head>
+
+<body>
+
+  <div id="fb-root"></div>
+  <script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '401695513260834', // App ID
+        status     : true, // check login status
+        cookie     : true, // enable cookies to allow the server to access the session
+        xfbml      : true  // parse XFBML
+      });
+    };
+
+    // Load the SDK Asynchronously
+    (function(d){
+      var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+      js = d.createElement('script'); js.id = id; js.async = true;
+      js.src = "//connect.facebook.net/en_US/all.js";
+      d.getElementsByTagName('head')[0].appendChild(js);
+    }(document));
+  </script>
+  
+
+  <!-- header -->
+  <header class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/" title="Hunchkin"><i class="icon-fire icon-large"></i> Hunchkin </a>
+        </div>
+        <div class="collapse collapse navbar-responsive-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+                <fb:login-button show-faces="true" width="200" max-rows="1" scope="publish_actions">
+                </fb:login-button>
+            </li>
+          </ul>
+        </div>
+      </div><!-- /container -->
+  </header>
+  <!-- /header -->
+
+
+<style>
+#map_canvas {
+    height: 600px;
+    border-style: solid;
+    border-width: 0px;
+    padding: 0px;
+}
+
+#list_view {
+  padding: 5px;
+}
+
+
+.hotel-item {
+    background: #99ccff;
+    border-style: solid;
+    border-width: 0px;
+}
+
+#hotel_detail {
+    height: 300px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+#search_options {
+    height: 300px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+.hotel-name {
+    height: 40px;
+    margin: 0;
+    padding: 0;
+}
+
+#refinement {
+    border-style:solid;
+    border-width: 1px;
+    padding: 10px;
+  }
+
+#survey {
+    border-style: solid;
+    border-width: 2px;
+    background: #ffffff;
+    padding: 10px;
+  }
+
+
+.ui-selecting { background: #FECA40; }
+.ui-selecting .handle { background: #FECA40; }
+.ui-selected { background: #F39814; color: white; }
+.ui-selected .handle { background: #F39814; color: white; }
+#hotel_selectable { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+#selectable2 { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+.nopadding {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.banner { height: 300px; background: #000 }
+.multiselect {
+  font-weight: bold;
+  color: blue;
+}
+</style>
+
+<script type="text/javascript"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD4YZLyMqH7XhEx6zJDRbEeaVdvIkGFndc&sensor=false">
+</script>
+<script>
+    function load_map() {
+        var mapOptions = {
+        center: new google.maps.LatLng(18.303359, -78.297741),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById("map_canvas"),
+            mapOptions);
+        var bounds = new google.maps.LatLngBounds();
+        
+        new google.maps.Marker({
+            map:map,
+            position:new google.maps.LatLng(18.29570, -78.33786),
+            icon:"static/img/orange01.png",
+            cursor:"Sandy Haven Resort",
+            title:"Sandy Haven Resort",
+        });
+        bounds.extend(new google.maps.LatLng(18.29570, -78.33786));
+        
+        new google.maps.Marker({
+            map:map,
+            position:new google.maps.LatLng(18.34154, -78.33517),
+            icon:"static/img/orange02.png",
+            cursor:"Couples Negril All Inclusive",
+            title:"Couples Negril All Inclusive",
+        });
+        bounds.extend(new google.maps.LatLng(18.34154, -78.33517));
+        
+        new google.maps.Marker({
+            map:map,
+            position:new google.maps.LatLng(18.34555, -78.33325),
+            icon:"static/img/orange03.png",
+            cursor:"Riu Palace Tropical Bay All Inclusive",
+            title:"Riu Palace Tropical Bay All Inclusive",
+        });
+        bounds.extend(new google.maps.LatLng(18.34555, -78.33325));
+        
+        new google.maps.Marker({
+            map:map,
+            position:new google.maps.LatLng(18.35585, -78.33623),
+            icon:"static/img/orange04.png",
+            cursor:"Riu Negril All Inclusive",
+            title:"Riu Negril All Inclusive",
+        });
+        bounds.extend(new google.maps.LatLng(18.35585, -78.33623));
+        
+        new google.maps.Marker({
+            map:map,
+            position:new google.maps.LatLng(18.25623, -78.36475),
+            icon:"static/img/orange05.png",
+            cursor:"Tensing Pen Hotel",
+            title:"Tensing Pen Hotel",
+        });
+        bounds.extend(new google.maps.LatLng(18.25623, -78.36475));
+        
+        map.fitBounds (bounds)
+    }
+
+    google.maps.event.addDomListener(window, 'load', load_map);
+
+</script>
+
+<div id="wrap"><!-- wrap for footer to work -->
+  <!-- Search Section -->
+  <div class="container">
+    <form class="form-horizontal" role="form">
+      <div class="form-group">
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-addon">Destination</span>
+            <input type="text" class="form-control" placeholder="Negril, Jamaica">
+          </div><!-- /input-group -->
+        </div><!-- /.col-md-5 -->
+        <div class="col-md-2">
+          <div class="input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+            <input type="text" class="form-control" id="date-from" name="date-from" placeholder="06/21/2014">
+          </div><!-- /input-group -->
+        </div><!-- /.col-md-3 -->
+        <div class="col-md-2">
+          <div class="input-group">
+            <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+            <input type="text" class="form-control" id="date-to" name="date-to" placeholder="06/24/2014">
+          </div><!-- /input-group -->
+        </div><!-- /.col-md-3 -->
+      </div><!-- /form-group -->
+      <div class="form-group">
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-addon">Similar to</span>
+            <input type="text" class="form-control" placeholder="Vivanta by Taj, Panaji, Goa, Panaji, IN">
+          </div><!-- /input-group -->
+        </div><!-- /.col-md-5 -->
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-addon">Kind of trip</span>
+            <select class="multiselect" multiple="multiple" style="color:blue !important;">
+              <option value="vacation">Vacation</option>
+              <option value="kids">Kid-friendly</option>
+              <option value="romantic">Romantic</option>
+              <option value="senior">Senior/Dsiabled-friendly</option>
+              <option value="adventure">Adventure</option>
+              <option value="business">Business</option>
+            </select>
+          </div><!-- /input-group -->
+        </div><!-- /.col-md-3 -->
+        <div class="col-md-1">
+          <button id="search" type"submit" class="btn btn-success"><i class="icon-search"></i> Search</button>
+        </div><!-- /.col-md-1 -->
+      </div><!-- /form-group -->
+    </form><!-- /form -->
+    <hr/>
+  <!-- /Search Section -->
+
+  <!--Price slider etc. -->
+    <div class="row">
+      <span class="col-md-3">
+      </span>
+      <span class="col-md-3">
+        <h4>Hunchkin Recommendations</h4>
+      </span>
+      <span class="col-md-2 col-md-offset-4">
+        <div class="btn-group pull-right">
+          <button type="button" class="btn btn-info">List</button>
+          <button type="button" class="btn btn-default">Map</button>
+        </div>
+      </span>
+    </div><!-- /row -->
+  <!--/Price slider etc. -->
+
+  <!-- List View -->
+  <div class="row">
+    <div class="col-md-3">
+      <p>
+        <div id="survey" class="widget greenLight">
+          <h4>
+              <i class="halflings-icon user"></i>
+              <span class="break"></span>
+              Price Range
+          </h4>
+          <hr>
+          <input type="text" class="input-small" id="filter_price" disabled/>
+          <p></p>
+          <div priceslider id="price-slider" style="width: 200px; "></div>
+        </div>
+      </p>
+      <p>
+        <div id="survey" class="widget greenLight">
+          <h4>
+              <i class="halflings-icon user"></i>
+              <span class="break"></span>
+              Ask your friends
+          </h4>
+          <hr>
+          <p><small>Maybe your friends have stayed at these hotels. Ask your friends for suggestions.</small></p>
+          <button class="btn btn-info btn-block" ng-click="postSurvey()"><i class="icon-facebook-sign icon-2x"></i> Post a poll on Facebook</button>
+        </div>
+      </p>
+    </div><!-- /col-md-3 -->
+    <div class="col-md-9">
+      <ol id="hotel_selectable" class="ui-selectable">
+        <li class="ui-widget-content">
+          <div class="row-fluid" style="height: 300px">
+            <div class="col-md-5 nopadding">
+              <div class="banner">
+                  <img src="http://media.expedia.com/hotels/5000000/4910000/4905200/4905127/4905127_46_b.jpg" class="img-responsive">
+                  <img src="http://media.expedia.com/hotels/5000000/4910000/4905200/4905127/4905127_47_b.jpg" class="img-responsive">
+                  <img src="http://media.expedia.com/hotels/5000000/4910000/4905200/4905127/4905127_49_b.jpg" class="img-responsive">
+                  <img src="http://media.expedia.com/hotels/5000000/4910000/4905200/4905127/4905127_50_b.jpg" class="img-responsive">
+              </div>
+            </div>
+            <div class="col-md-7 nopadding">
+              <h4>Sandy Haven Resort</h4>
+              <hr/>
+              <small>Located in Negril, Sandy Haven Resort is by the ocean and convenient to Times Square Mall and Throne Room. This beach resort is<a href="#">...</a></small>
+              <p>
+                <span type="label" class="label label-info label-xs">Recommended because</span>
+              </p>
+              <table class="table">
+                <tr>
+                  <td>Multiple Poolside Bars</td>
+                  <td>Babysitting or childcare(free)</td>
+                </tr>
+                <tr>
+                  <td>Kids Pool</td>
+                  <td>Private Beach</td>
+                </tr>
+                <tr>
+                  <td>Rooms with Beach View</td>
+                  <td>Many Essential Services nearby</td>
+                </tr>
+              </table>
+              <p>
+                  <a class="btn-xs btn-success pull-right">Book from $315 and up</a>
+              </p>
+            </div>
+          </div><!-- /row-fluid -->
+        </li>
+        <li class="ui-widget-content">
+          <div class="row-fluid" style="height: 300px">
+            <div class="col-md-5 nopadding">
+              <div class="banner">
+                  <img src="http://media.expedia.com/hotels/1000000/860000/859700/859683/859683_31_b.jpg" class="img-responsive">
+                  <img src="http://media.expedia.com/hotels/1000000/860000/859700/859683/859683_32_b.jpg" class="img-responsive">
+                  <img src="http://media.expedia.com/hotels/1000000/860000/859700/859683/859683_33_b.jpg" class="img-responsive">
+                  <img src="http://media.expedia.com/hotels/1000000/860000/859700/859683/859683_35_b.jpg" class="img-responsive">
+              </div>
+            </div>
+            <div class="col-md-7 nopadding">
+              <h4>RUI Palace Tropical Bay All Inclusive</h4>
+              <hr/>
+              <small>When you stay at RIU Palace Tropical Bay All Inclusive in Negril, you'll be on the beach and convenient to Booby Cay and Kool Runnings Water<a href="#">...</a></small>
+              <p>
+                <span type="label" class="label label-info label-xs">Recommended because</span>
+              </p>
+              <table class="table">
+                <tr>
+                  <td>Kids Pool</td>
+                  <td>Babysitting or childcare</td>
+                </tr>
+                <tr>
+                  <td>Waterslide</td>
+                  <td>Cribs/infant beds</td>
+                </tr>
+                <tr>
+                  <td>Rooms with Beach View</td>
+                  <td>Many Essential Services nearby</td>
+                </tr>
+              </table>
+              <p>
+                  <a class="btn-xs btn-success pull-right">Book from $739 and up</a>
+              </p>
+            </div>
+          </div><!-- /row-fluid -->
+        </li>
+      </ul><!-- /ul -->
+    </div><!-- /col-md-9 -->
+  </div><!-- /row -->
+  <!-- /List View -->
+
+  </div><!-- /container -->
+</div><!-- /wrap -->
+
+
+
+<div id="footer" class='container'>
+  <div class='row'>
+      <div class='col-md-12'>
+          <div class='row'>
+              <div class='col-md-4'>
+                  <h4>Product</h4>
+                  <ul class='unstyled'>
+                  <li>
+                      <a href='/'>Home</a>
+                  </li>
+                  <li>
+                      <a href='/why'>Why Hunchkin?</a>
+                  </li>
+                  <li>
+                      <a href='/tour'>FAQ</a>
+                  </li>
+                  </ul>
+
+              </div>
+              <div class='col-md-4'>
+                  <h4>More</h4>
+                  <ul class='unstyled'>
+                  <li>
+                      <a href='/blog'>Blog</a>
+                  </li>
+                  </ul>
+              </div>
+              <div class='col-md-4'>
+
+                  <h4>Company</h4>
+                  <ul class='unstyled'>
+                  <li>
+                      <a href='/about'>About</a>
+                  </li>
+                  <li>
+                      <script type='text/javascript'>
+                      //<![CDATA[
+                          { coded = "@.ZHL"
+                          key = "8IQ0LK3zyfjrHuOM1pCSnJYd7khwXVGNRcWqBU9egt5TFAP4EmZsvl6aboi2xD"
+                          shift=coded.length
+                          link=""
+                          for (i=0; i<coded.length; i++) {
+                              if (key.indexOf(coded.charAt(i))==-1) {
+                              ltr = coded.charAt(i)
+                              link += (ltr)
+                              }
+                              else {     
+                              ltr = (key.indexOf(coded.charAt(i))-shift+key.length) % key.length
+                              link += (key.charAt(ltr))
+                              }
+                          }
+                          document.write("<a href='mailto:"+link+"'>Contact Us</a>")
+                          }
+                      //]]>
+                      </script>
+
+                  </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+    
+    
+    
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
+    <script src="bootstrap3/js/bootstrap.min.js"></script>
+    <script src="galleria/galleria-1.3.5.min.js"></script>
+    <script src="bootstrap-multiselect/js/bootstrap-multiselect.js"></script>
+
+
+<script>
+//$(function() {
+//    $( "#hotel_selectable" ).selectable({filter: "li"});
+//});
+</script>
+<script type="text/javascript" src="static/js/jquery.raty.min.js"></script>
+<script>
+$(".StarRating").raty({
+    readOnly: true,
+    path:"static/img",
+    score:function() {
+        return $(this).attr("star-rating");
+    }
+});
+$("#filter_travel_group").multiselect({
+  selectedText: 'Travel party',
+  header: false,
+  noneSelectedText: 'Travel party'
+});
+$("#filter_features").multiselect({
+  selectedText: 'Features',
+  header: true,
+  noneSelectedText: 'Features'
+});
+$("#filter_location").multiselect({
+  selectedText: 'Location',
+  header: true,
+  noneSelectedText: 'Location'
+});
+$("#filter_travel_group").multiselect("checkAll");
+$("#filter_features").multiselect("checkAll");
+$("#filter_location").multiselect("checkAll");
+$( "#price-slider" ).slider({
+  range: true,
+  min: 0,
+  max: 500,
+  step: 20,
+  values: [ 50, 300 ],
+  slide: function( event, ui ) {
+      $( "#filter_price" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+  }
+});
+$( "#filter_price" ).val( "$" + $( "#price-slider" ).slider( "values", 0 ) +
+  " - $" + $( "#price-slider" ).slider( "values", 1 ) );
+</script>
+
+    <!-- Asynchronous Google Analytics snippet. Change UA-XXXXX-X to be your site's ID.
+       mathiasbynens.be/notes/async-analytics-snippet -->
+    <script>
+    var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
+    (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+    s.parentNode.insertBefore(g,s)}(document,'script'));
+    </script>
+
+<script>
+  Galleria.loadTheme('galleria/themes/classic/galleria.classic.min.js');
+  Galleria.run('.banner');
+</script>
+
+<script>
+  $('.multiselect').multiselect();
+</script>
+</body>
+</html>
