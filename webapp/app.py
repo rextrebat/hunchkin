@@ -13,6 +13,7 @@ import MySQLdb
 import pymongo
 import pylibmc
 from flask import Flask, g, render_template
+from flask_debugtoolbar import DebugToolbarExtension
 import urllib
 from flask.ext.babel import Babel
 from flask.ext.security import Security
@@ -117,7 +118,7 @@ def configure_logging(app):
     """Configure file(info) and email(error) logging."""
 
     if app.debug or app.testing:
-        pass
+        toolbar = DebugToolbarExtension(app)
     else:
         import logging
         import os
