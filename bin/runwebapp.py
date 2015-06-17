@@ -6,6 +6,8 @@ import os
 from flask.ext.script import Manager, Command
 from gevent.wsgi import WSGIServer
 
+from werkzeug.debug import DebuggedApplication
+
 from webapp import create_app
 from webapp.extensions import db
 from webapp.models import User
@@ -21,6 +23,7 @@ def init_manager(config=None):
     manager = Manager(app)
     project_root_path = os.path.join(os.path.dirname(app.root_path))
     manager.add_command('run', RunServer())
+    manager.add_command('debug', DebugServer())
     manager.add_command('reset', Reset())
 
 class RunServer(Command):
@@ -30,6 +33,14 @@ class RunServer(Command):
         http_server = WSGIServer(('0.0.0.0', 5000), app)
         http_server.serve_forever()
         #app.run(host='0.0.0.0', debug=True)
+
+
+class DebugServer(Command):
+    """Debug Server"""
+
+    def run(self):
+        app.run(host='0.0.0.0', port=5000, debug=True)
+        #app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
 
 class Reset(Command):
