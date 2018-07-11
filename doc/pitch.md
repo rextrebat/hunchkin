@@ -1,0 +1,38 @@
+# Hunchkin
+## "The Paradox of Choice"
+`There are now several books and magazines devoted to what is called the "voluntary simplicity" movement. Its core idea is that we have too many choices, too many decisions, too little time to do what is really important. [...] Taking care of our own "wants" and focusing on what we "want" to do does not strike me as a solution to the problem of too much choice - Barry Schwartz (The Paradox of Choice)` 
+From supermarkets to online retailers for electronics, the tyranny of choice can sometimes make our shopping experience quite miserable.
+
+## Recommendation
+Companies like Amazon, Netflix and other retailers often use Collaborative Filtering which relies upon previous purchase history to recommend future purchases to their clients. While this method may provide greater accuracy with longer client history and frequently purchased products, when it comes to newer clients or products with less purchase history to rely upon, recommendations lose accuracy. Such is the case with high value items such as Jewelry and Electronics, and infrequent expenditures such as on leisure travel. 
+
+## Hunchkin
+Decision making for high value items or experiences is usually accomplished by combing through multiple information sources. Travel websites or online electric retailers may provide you the ability to sort by price, user reviews and possibly a few other atttributes and even offer you side-by-side comparisons along tens of features. But they rarely take into account your personal likings in the same way that Amazon and Netflix have tried to approach their recommendations. Recommendation systems can take a content-based filtering approach - the items characteristics are distilled down to a discrete set of features and attributes. Hunchkin does exactly that by modeling the domain for a product into a hierarchically organized set of discrete attributes and using information retrieval techniques to populate these attributes from the various data sources that the user typically uses. However, as noted, this hardly takes into consideration the particular buyer. Hunchkin uniquely combines the customer's "prior" beliefs - e.g. another product that she liked in the past - to narrow down to the attributes that are meaningful to this particular customer and come up with a set of recommendations. The elicitation of "priors" informs the entire short-listing and information display process. 
+
+![Concept](./hk-concept.png)
+A product "genome" represents the discrete attributes of the product. Distance functions at an aggregate level ("chromosome") are used to arrive at a vector similarity of the product with respect to the "priors". 
+
+There is an overwhelming amount of user feedback on products in blogs, specialized review sites (Trip Advisor, Yelp, for instance) and merchant websites. Reading hundreds of reviews and getting an overall picture is no longer easy. The problem is compounded by the ever-increasing review mills which generate a lot of "paid for" reviews on review sites. Hunchkin cuts through this problem by first, narrowing down the choices to a very small set that is customized for the buyer, as described before and then enabling the buyer to seek direct and pointed feedback about these products from her friends on her social networks. She is assured of reviews and feedback that she can trust more rather than an anonymous review, possibly written by someone who has been paid by the product manufacturer.
+
+# Hunchkin Hotels
+
+## What it is 
+Leisure travelers spend countless hours researching hotel features and reviews going back and forth between sites like Expedia, Kayak and Tripadvisor. When you travel alone for business, the decision variables are simple - location, wifi, dining etc. but family vacations can easily get complicated to research - activities for you and your partner, stuff for kids to do. Sometimes you can just go with a chain that you know but in many parts of the world, you really don't have that many chain hotels. The decision about which vacation hotel you pick is an important one because it can make or break a vacation. But it is not easy researching out all the information that you need to make this decision. It is further complicated by the huge volumes of reviews for popular hotels and also the increasing questionable quality of these hotels
+
+The product does the following:
+* Asks you about a hotel that you liked in the past (could be from any location) during your hotel search along with dates of travel and destination
+* Gives you 5 recommendations which are similar to the hotel in features, amenities, dining, location etc.
+* Provides you with the ability to make detailed comparisons between these 5 hotels
+* You can ask your friends on Facebook or Google+ about opinions and recommendations from these 5 hotels
+
+## How it works
+Think of it as a Pandora for hotels. There is a genome that represents various aspects of a hotel - its features, the location, the services it provides, the dining and several others and this information is collected from various sources. There is a unique way of finding a "genome distance" between hotels and it finds hotels with the smallest distance (most similar to) from the hotel you say you liked. 
+
+## Revenue
+Hunchkin will initially rely primarily on affiliations with Online Travel Agencies (Expedia, Orbitz, Travelocity etc.) for referred sales commissions. Eventually as it establishes itself as a key Hotel search platform, advertising revenues will be added.
+
+
+## Competition }
+Our competition will mainly be existing meta-search engines such as Kayak, Hipmunk etc. However, none of them have the recommendation capabilities that are in Hunchkin Hotels. 
+
+

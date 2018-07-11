@@ -30,6 +30,9 @@ from webapp.config import DefaultConfig, APP_NAME
 from webapp.views import search, browse_genome, frontend, social, GenomeRuleView, GenomeCategoryView
 from webapp.models import User, Role, Connection, GenomeRule, GenomeCategory
 from webapp.extensions import db, db_ean, mail, cache, login_manager
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
 
 # For import *
 __all__ = ['create_app']

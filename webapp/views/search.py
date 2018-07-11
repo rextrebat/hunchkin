@@ -144,6 +144,7 @@ def search_get_similarities(region_id, base_hotel_id, comp_hotels):
         similarities = search_get_hotel_distances(
                 search_post_hotel_distances(base_hotel_id, comp_hotels))
         #mc.set(key, similarities, 3600)
+    logger.debug("Similarities: %s" % str(len(similarities)))
     return similarities
 
 
@@ -253,7 +254,10 @@ def search_prepare_selection(all_hotels, similarities,
                     )
             hotel["array_offset"] = n
         n += 1
+        logger.debug("Name of hotel: %s" % hotel["Name"])
+        logger.debug("Hotel: %s" % json.dumps(hotel))
         hotel_recommendations.append(hotel)
+    logger.debug("Recommendations: %s" % str(len(hotel_recommendations)))
     return hotel_recommendations
 
 
@@ -493,7 +497,8 @@ def handle_search_a_ctrl():
             200
             )
 #TODO: parameterize number in selection
-    return json.dumps(recommendations)
+    json_repr = json.dumps(recommendations)
+    return json_repr
 
 
 @search.route('/search_results_avail')
